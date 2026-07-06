@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
-i
 import { db } from "@/lib/firebase";
 import { collection, onSnapshot, deleteDoc, doc } from "firebase/firestore";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";

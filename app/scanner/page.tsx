@@ -8,7 +8,7 @@ import { collection, query, where, getDocs, updateDoc, doc } from "firebase/fire
 import { Scanner } from "@yudiel/react-qr-scanner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CheckCircle, AlertTriangle, Loader2, Camera, LogOut, Calendar, User, Hash, Clock } from "lucide-react";
+import { CheckCircle, AlertTriangle, Loader2, Camera, LogOut, Calendar, User, Hash, Clock, Users } from "lucide-react";
 
 export default function ScannerPage() {
   const [user, setUser] = useState<any>(null);
