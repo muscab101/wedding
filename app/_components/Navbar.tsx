@@ -21,7 +21,6 @@ const navItems = [
   { name: "Home", href: "/dashboard" },
   { name: "RSVP & Pass", href: "/rsvp" },
   { name: "Venue", href: "/venue" },
-  { name: "Gallery", href: "/gallery" },
   { name: "Wishes", href: "/wishes" },
 ];
 
