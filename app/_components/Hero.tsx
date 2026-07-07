@@ -2,10 +2,9 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { Calendar, MapPin, ChevronDown } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import Hero from "../../public/hero.png"
 import Image from "next/image";
+import { Calendar, MapPin, ChevronDown } from "lucide-react";
+import HeroImg from "../../public/hero.png";
 
 export default function HeroSection() {
   const [animate, setAnimate] = useState(false);
@@ -15,141 +14,104 @@ export default function HeroSection() {
     setAnimate(true);
   }, []);
 
-  return (
-    <section className="relative min-h-[calc(100vh-76px)] w-full flex items-center justify-center overflow-hidden px-4 py-12 md:py-24">
-      
-      <div className="max-w-6xl w-full grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-        
-        {/* LEFT SIDE: TEXT CONTENT */}
-        <div className="lg:col-span-7 flex flex-col justify-center text-center lg:text-left space-y-6 md:space-y-8">
-          
-          {/* Tagline */}
-          <div 
-            className={`inline-flex items-center justify-center lg:justify-start gap-2 border border-[#8B4F58]/10 px-4 py-1.5 rounded-full shadow-sm w-fit mx-auto lg:mx-0 transition-all duration-1000 transform ${
-              animate ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
-            }`}
-          >
-            <span className="w-2 h-2 bg-[#8B4F58] rounded-full animate-ping" />
-            <span className="text-xs font-medium uppercase tracking-widest text-[#8B4F58]">
-              The Celebration of Love
-            </span>
-          </div>
+  const reveal = (delay: string) =>
+    `transition-all duration-1000 ${delay} ${
+      animate ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0"
+    }`;
 
-          {/* Couple's Names */}
-          <h1 
-            className={`text-5xl md:text-7xl font-serif text-[#8B4F58] tracking-tight leading-tight transition-all duration-1000 delay-200 transform ${
-              animate ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"
-            }`}
+  return (
+    <section className="relative flex min-h-[calc(100vh-64px)] w-full items-center justify-center overflow-hidden px-5 py-16 sm:px-8">
+      <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(70%_50%_at_50%_0%,var(--brand-tint),transparent_70%)]" />
+
+      <div className="grid w-full max-w-6xl grid-cols-1 items-center gap-12 lg:grid-cols-12">
+        {/* Text */}
+        <div className="flex flex-col items-center space-y-7 text-center lg:col-span-7 lg:items-start lg:text-left">
+          <span className={`eyebrow ${reveal("delay-0")}`}>The celebration of love</span>
+
+          <h1
+            className={`font-serif text-5xl leading-[1.05] tracking-tight text-brand sm:text-6xl lg:text-7xl ${reveal(
+              "delay-100"
+            )}`}
           >
-            Abdirahim <br className="hidden md:inline" />
-            <span className="text-3xl md:text-5xl font-sans font-light text-gray-400 mx-2 md:mx-0 block md:inline md:my-0 my-2">
-              &amp;
-            </span>{" "}
-            Creezel Tie
+            Abdirahim
+            <span className="mx-2 font-light text-brand/40">&amp;</span>
+            Creezel
           </h1>
 
-          {/* Short Description */}
-          <p 
-            className={`text-gray-500 max-w-xl text-base md:text-lg leading-relaxed mx-auto lg:mx-0 transition-all duration-1000 delay-400 transform ${
-              animate ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"
-            }`}
-          >
-            We are thrilled to invite you to share in our joy as we exchange vows and 
-            begin our beautiful journey together. Your presence is our greatest gift.
+          <p className={`max-w-xl text-base leading-relaxed text-muted-foreground ${reveal("delay-200")}`}>
+            We are thrilled to invite you to share in our joy as we exchange vows
+            and begin our beautiful journey together. Your presence is our
+            greatest gift.
           </p>
 
-          {/* Key Info (Date & Venue Mini Cards) */}
-          <div 
-            className={`grid grid-cols-2 gap-4 max-w-md mx-auto lg:mx-0 transition-all duration-1000 delay-600 transform ${
-              animate ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"
-            }`}
-          >
-            <div className="flex items-center gap-3 p-3.5 rounded-2xl border border-[#8B4F58]/10 shadow-sm bg-white/10 backdrop-blur-xs">
-              <Calendar className="w-5 h-5 text-[#8B4F58] shrink-0" />
+          <div className={`grid w-full max-w-md grid-cols-2 gap-4 ${reveal("delay-300")}`}>
+            <div className="flex items-center gap-3 rounded-2xl border border-border bg-card p-4">
+              <Calendar className="h-5 w-5 shrink-0 text-brand" />
               <div className="text-left">
-                <p className="text-[11px] uppercase tracking-wider text-gray-400 font-medium">Date</p>
-                <p className="text-sm font-semibold text-gray-700">September 11, 2026</p>
+                <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Date</p>
+                <p className="text-sm font-semibold text-foreground">September 11, 2026</p>
               </div>
             </div>
-
-            <div className="flex items-center gap-3 p-3.5 rounded-2xl border border-[#8B4F58]/10 shadow-sm bg-white/10 backdrop-blur-xs">
-              <MapPin className="w-5 h-5 text-[#8B4F58] shrink-0" />
+            <div className="flex items-center gap-3 rounded-2xl border border-border bg-card p-4">
+              <MapPin className="h-5 w-5 shrink-0 text-brand" />
               <div className="text-left">
-                <p className="text-[11px] uppercase tracking-wider text-gray-400 font-medium">Location</p>
-                <p className="text-sm font-semibold text-gray-700 truncate">London, UK</p>
+                <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Location</p>
+                <p className="truncate text-sm font-semibold text-foreground">London, UK</p>
               </div>
             </div>
           </div>
 
-          {/* Action Buttons (CTAs) */}
-          <div 
-            className={`flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 pt-2 transition-all duration-1000 delay-800 transform ${
-              animate ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"
-            }`}
-          >
-            <Button 
-              className="w-full sm:w-auto bg-[#8B4F58] hover:bg-[#723E46] text-white font-medium h-12 px-8 rounded-full shadow-md transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0"
+          <div className={`flex flex-col gap-3 pt-2 sm:flex-row ${reveal("delay-500")}`}>
+            <Link
+              href="/rsvp"
+              className="rounded-full bg-brand px-8 py-3 text-center text-sm font-medium text-white shadow-sm transition hover:bg-brand-hover"
             >
-              <Link href="/rsvp">RSVP &amp; Get Entry Pass</Link>
-            </Button>
-            
-            <Button 
-              variant="outline" 
-              className="w-full sm:w-auto border-[#8B4F58]/20 bg-transparent text-gray-700 font-medium h-12 px-8 rounded-full transition-all duration-300 hover:bg-[#8B4F58]/5"
+              RSVP &amp; Get Entry Pass
+            </Link>
+            <Link
+              href="/venue"
+              className="rounded-full border border-border px-8 py-3 text-center text-sm font-medium text-brand transition hover:bg-accent"
             >
-              <Link href="/venue">View Ceremony Details</Link>
-            </Button>
+              View Venue Details
+            </Link>
           </div>
-
         </div>
 
-        {/* RIGHT SIDE: IMAGE WITH DECORATIVE FRAME */}
-        <div 
-          className={`lg:col-span-5 flex justify-center items-center transition-all duration-[1200ms] cubic-bezier(0.16, 1, 0.3, 1) delay-300 transform ${
-            animate ? "opacity-100 scale-100 translate-x-0" : "opacity-0 scale-95 translate-y-12 lg:translate-y-0 lg:translate-x-12"
-          }`}
+        {/* Image */}
+        <div
+          className={`flex justify-center lg:col-span-5 ${
+            animate ? "translate-x-0 scale-100 opacity-100" : "translate-x-6 scale-95 opacity-0"
+          } transition-all duration-1000 delay-300`}
         >
-          <div className="relative w-full max-w-[360px] aspect-[3/4] sm:max-w-[400px]">
-            {/* Elegant Border Frame Decoration Behind the Image */}
-            <div className="absolute inset-0 border border-[#8B4F58]/20 rounded-[40px] transform rotate-3 scale-102 transition-transform duration-500 hover:rotate-1" />
-            
-            {/* The Main Image Container */}
-            <div className="absolute inset-0 p-3 rounded-[40px] shadow-2xl border border-[#8B4F58]/10 overflow-hidden group bg-transparent">
-              <div className="w-full h-full rounded-[32px] overflow-hidden relative">
-                <Image 
-                  src={Hero} 
-                  alt="Abdirahim and Xalimo Wedding Portrait" 
-                  className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+          <div className="relative aspect-[3/4] w-full max-w-[380px]">
+            <div className="absolute inset-0 -rotate-2 rounded-[36px] border border-brand/20" />
+            <div className="absolute inset-0 overflow-hidden rounded-[36px] border border-border bg-card p-2.5 shadow-xl">
+              <div className="relative h-full w-full overflow-hidden rounded-[28px] bg-muted">
+                <Image
+                  src={HeroImg}
+                  alt="Abdirahim and Creezel wedding portrait"
+                  className="h-full w-full object-cover"
                   loading="eager"
                   onError={(e) => {
                     e.currentTarget.style.display = "none";
                   }}
                 />
-                
-                {/* Overlay soft gradient inside image */}
-                <div className="absolute inset-0 bg-gradient-to-t from-[#8B4F58]/20 via-transparent to-transparent opacity-60" />
               </div>
             </div>
-
-            {/* Floating Tag over Image */}
-            <div className="absolute -bottom-4 -left-4 border border-[#8B4F58]/10 shadow-lg px-5 py-3 rounded-2xl hidden sm:flex items-center gap-3 animate-bounce [animation-duration:3s] bg-white/80 backdrop-blur-md">
-              <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-serif text-[#8B4F58] bg-[#8B4F58]/5">
-                💍
-              </div>
+            <div className="absolute -bottom-4 -left-4 hidden items-center gap-3 rounded-2xl border border-border bg-card/90 px-5 py-3 shadow-lg backdrop-blur-md sm:flex">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-accent text-sm">💍</div>
               <div className="text-left">
-                <p className="text-[10px] uppercase text-gray-400 font-medium font-sans">Save the date</p>
-                <p className="text-xs font-bold text-gray-700 font-sans">11 . 09 . 2026</p>
+                <p className="text-[10px] font-medium uppercase text-muted-foreground">Save the date</p>
+                <p className="text-xs font-bold text-foreground">11 · 09 · 2026</p>
               </div>
             </div>
           </div>
         </div>
-
       </div>
 
-      {/* Scroll indicator animation at the very bottom */}
-      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-gray-400 hidden md:flex flex-col items-center gap-1 opacity-60 animate-bounce">
-        <span className="text-[10px] uppercase tracking-widest font-medium font-sans">Scroll</span>
-        <ChevronDown className="w-4 h-4" />
+      <div className="absolute bottom-5 left-1/2 hidden -translate-x-1/2 animate-bounce flex-col items-center gap-1 text-muted-foreground md:flex">
+        <span className="text-[10px] font-medium uppercase tracking-widest">Scroll</span>
+        <ChevronDown className="h-4 w-4" />
       </div>
     </section>
   );

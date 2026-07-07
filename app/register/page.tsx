@@ -4,52 +4,61 @@ import React, { useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Loader2 } from "lucide-react";
+import { Loader2, CheckCircle2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { GoogleIcon } from "../_components/GoogleIcon";
 
-export default function LoginPage() {
+export default function RegisterPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  // Route the user based on their email
-  const handleUserRedirect = (userEmail: string | null) => {
-    const clean = (userEmail ?? "").toLowerCase().trim();
-    if (clean === "admin@gmail.com") router.push("/admin");
-    else if (clean === "scanner@gmail.com") router.push("/scanner");
-    else router.push("/dashboard");
-  };
-
-  // Email & Password login
-  const handleEmailLogin = async (e: React.FormEvent) => {
+  // New registration (Email, Password & Confirm)
+  const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    setLoading(true);
+    setNotice("");
 
-    const { data, error: signInError } = await supabase.auth.signInWithPassword({
+    if (password !== confirmPassword) {
+      setError("The password and its confirmation do not match.");
+      return;
+    }
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters long.");
+      return;
+    }
+
+    setLoading(true);
+    const { data, error: signUpError } = await supabase.auth.signUp({
       email: email.trim(),
       password,
     });
 
-    if (signInError) {
-      const msg = signInError.message.toLowerCase();
-      if (msg.includes("not confirmed")) {
-        setError("Please confirm your email first — check your inbox for the confirmation link.");
-      } else {
-        setError("The email or password you entered is incorrect.");
-      }
+    if (signUpError) {
+      const msg = signUpError.message.toLowerCase();
+      if (msg.includes("already")) setError("This email is already in use.");
+      else if (msg.includes("valid")) setError("The email address you entered is not valid.");
+      else setError("Something went wrong during registration.");
       setLoading(false);
       return;
     }
 
-    handleUserRedirect(data.user?.email ?? null);
+    // If email confirmation is on, no session is returned yet.
+    if (!data.session) {
+      setNotice("Almost there! Check your email for a confirmation link, then sign in.");
+      setLoading(false);
+      return;
+    }
+
+    router.push("/dashboard");
   };
 
-  // Google Account login (redirects to Google, then back)
+  // Sign up with Google Account (redirects to Google, then back)
   const handleGoogleLogin = async () => {
     setError("");
     setLoading(true);
@@ -73,10 +82,10 @@ export default function LoginPage() {
             A <span className="text-brand/40">&amp;</span> C
           </Link>
           <h1 className="mt-6 font-serif text-3xl tracking-tight text-brand">
-            Welcome back
+            Join the celebration
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            Sign in to RSVP and view your entry pass.
+            Register to RSVP and generate your entry pass.
           </p>
         </div>
 
@@ -86,8 +95,14 @@ export default function LoginPage() {
               {error}
             </div>
           )}
+          {notice && (
+            <div className="mb-5 flex items-start gap-2 rounded-xl border border-brand/15 bg-brand-soft p-3 text-sm text-brand">
+              <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
+              <span>{notice}</span>
+            </div>
+          )}
 
-          <form onSubmit={handleEmailLogin} className="grid gap-4">
+          <form onSubmit={handleSignUp} className="grid gap-4">
             <div className="grid gap-2">
               <Label htmlFor="email" className="text-sm font-medium text-foreground">
                 Email
@@ -110,9 +125,24 @@ export default function LoginPage() {
               <Input
                 id="password"
                 type="password"
-                placeholder="••••••••"
+                placeholder="At least 6 characters"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                required
+                disabled={loading}
+                className="h-11 rounded-xl"
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="confirm" className="text-sm font-medium text-foreground">
+                Confirm Password
+              </Label>
+              <Input
+                id="confirm"
+                type="password"
+                placeholder="Re-enter your password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
                 required
                 disabled={loading}
                 className="h-11 rounded-xl"
@@ -124,7 +154,7 @@ export default function LoginPage() {
               className="mt-1 flex h-11 items-center justify-center gap-2 rounded-xl bg-brand text-sm font-medium text-white transition hover:bg-brand-hover disabled:opacity-60"
             >
               {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-              Sign In
+              Create Account
             </button>
           </form>
 
@@ -146,9 +176,9 @@ export default function LoginPage() {
         </div>
 
         <p className="mt-6 text-center text-sm text-muted-foreground">
-          Don&apos;t have an account?{" "}
-          <Link href="/register" className="font-medium text-brand hover:underline">
-            Register
+          Already have an invite?{" "}
+          <Link href="/login" className="font-medium text-brand hover:underline">
+            Sign In
           </Link>
         </p>
       </div>

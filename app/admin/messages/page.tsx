@@ -2,10 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
-
 import { supabase } from "@/lib/supabase";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Trash2, Loader2, MessageSquareText, Calendar } from "lucide-react";
 import { AdminSidebar } from "../_components/admin-sidebar";
 import type { Wish } from "@/lib/types";
@@ -16,26 +13,15 @@ export default function MessagesAdminPage() {
 
   useEffect(() => {
     if (loading) return;
-
-    // Guests submit blessings to the `wishes` table (see /wishes).
     const load = async () => {
-      const { data } = await supabase
-        .from("wishes")
-        .select("*")
-        .order("created_at", { ascending: false });
+      const { data } = await supabase.from("wishes").select("*").order("created_at", { ascending: false });
       setMessages((data ?? []) as Wish[]);
     };
     load();
-
     const channel = supabase
       .channel("wishes-admin-changes")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "wishes" },
-        load
-      )
+      .on("postgres_changes", { event: "*", schema: "public", table: "wishes" }, load)
       .subscribe();
-
     return () => {
       supabase.removeChannel(channel);
     };
@@ -47,54 +33,60 @@ export default function MessagesAdminPage() {
     }
   };
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="animate-spin" /></div>;
+  if (loading)
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <Loader2 className="h-6 w-6 animate-spin text-brand" />
+      </div>
+    );
 
   return (
-    <div className="flex bg-[#FFF0F5]/20 min-h-screen text-black">
+    <div className="flex min-h-screen bg-muted/30">
       <AdminSidebar />
-      <main className="flex-1 p-8 max-w-4xl space-y-6">
-        <div>
-          <h1 className="text-3xl font-serif text-[#8B4F58]">Guest Congratulatory Logs</h1>
-          <p className="text-sm text-gray-500">Read and audit messages sent by wedding guests.</p>
-        </div>
+      <main className="flex-1 space-y-6 p-6 md:p-10">
+        <header>
+          <h1 className="font-serif text-3xl tracking-tight text-brand">Guest Messages</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Read and audit the blessings sent by your guests. {messages.length} total.
+          </p>
+        </header>
 
         <div className="grid grid-cols-1 gap-4">
           {messages.map((msg) => (
-            <Card key={msg.id} className="bg-white border-[#8B4F58]/10 rounded-2xl shadow-xl shadow-[#8B4F58]/5 relative overflow-hidden">
-              <CardContent className="p-6 flex justify-between items-start gap-4">
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2 text-[#8B4F58]">
-                    <MessageSquareText className="h-4 w-4" />
-                    <span className="font-bold text-sm uppercase tracking-wide">{msg.name || "Anonymous Guest"}</span>
-                    {msg.relation && (
-                      <span className="text-xs font-normal text-gray-400 normal-case">
-                        · {msg.relation}
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-gray-700 leading-relaxed text-sm italic">"{msg.text}"</p>
-                  
-                  {msg.created_at && (
-                    <div className="flex items-center gap-1 text-xs text-gray-400">
-                      <Calendar className="h-3 w-3" />
-                      {new Date(msg.created_at).toLocaleDateString("en-GB", {
-                        day: "numeric", month: "short", year: "numeric"
-                      })}
-                    </div>
+            <div key={msg.id} className="flex items-start justify-between gap-4 rounded-2xl border border-border bg-card p-6">
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 text-brand">
+                  <MessageSquareText className="h-4 w-4" />
+                  <span className="text-sm font-bold uppercase tracking-wide">{msg.name || "Anonymous Guest"}</span>
+                  {msg.relation && (
+                    <span className="text-xs font-normal normal-case text-muted-foreground">· {msg.relation}</span>
                   )}
                 </div>
-                
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={() => handleDelete(msg.id)} 
-                  className="text-red-500 hover:text-red-700 hover:bg-red-50 rounded-xl"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </CardContent>
-            </Card>
+                <p className="text-sm italic leading-relaxed text-foreground">&ldquo;{msg.text}&rdquo;</p>
+                {msg.created_at && (
+                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                    <Calendar className="h-3 w-3" />
+                    {new Date(msg.created_at).toLocaleDateString("en-GB", {
+                      day: "numeric",
+                      month: "short",
+                      year: "numeric",
+                    })}
+                  </div>
+                )}
+              </div>
+              <button
+                onClick={() => handleDelete(msg.id)}
+                className="rounded-lg p-2 text-red-500 transition hover:bg-red-50 hover:text-red-700"
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
+            </div>
           ))}
+          {messages.length === 0 && (
+            <div className="rounded-2xl border border-dashed border-border bg-card/50 p-12 text-center text-sm text-muted-foreground">
+              No messages yet.
+            </div>
+          )}
         </div>
       </main>
     </div>

@@ -5,11 +5,18 @@ import { supabase } from "@/lib/supabase";
 import type { User } from "@supabase/supabase-js";
 import { useRouter } from "next/navigation";
 import { Scanner, type IDetectedBarcode } from "@yudiel/react-qr-scanner";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Loader2, Hash, Clock, Users } from "lucide-react";
+import {
+  Loader2,
+  Hash,
+  Clock,
+  Users,
+  CheckCircle2,
+  XCircle,
+  ScanLine,
+} from "lucide-react";
 import { passIdSchema } from "@/lib/schemas";
 import type { Rsvp } from "@/lib/types";
+import { ScannerNavbar } from "../_components/Scanner-navbar";
 
 type ScanStatus = "ready" | "found" | "success" | "error";
 
@@ -20,7 +27,6 @@ export default function ScannerPage() {
   const [guestData, setGuestData] = useState<Rsvp | null>(null);
   const [status, setStatus] = useState<ScanStatus>("ready");
   const [message, setMessage] = useState("");
-
   const router = useRouter();
 
   useEffect(() => {
@@ -32,20 +38,14 @@ export default function ScannerPage() {
         setLoading(false);
       }
     };
-
     supabase.auth.getSession().then(({ data }) => guard(data.session?.user ?? null));
-
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) =>
-      guard(session?.user ?? null)
-    );
-
+    } = supabase.auth.onAuthStateChange((_event, session) => guard(session?.user ?? null));
     return () => subscription.unsubscribe();
   }, [router]);
 
   const findGuestByPass = async (rawValue: string) => {
-    // 1. Validate the QR payload before hitting the database.
     const parsed = passIdSchema.safeParse(rawValue);
     if (!parsed.success) {
       setStatus("error");
@@ -65,7 +65,6 @@ export default function ScannerPage() {
       setMessage("Lookup failed. Check your connection and retry.");
       return;
     }
-
     if (!data) {
       setStatus("error");
       setMessage("No guest found for this pass.");
@@ -78,9 +77,7 @@ export default function ScannerPage() {
 
   const confirmVerification = async () => {
     if (!guestData) return;
-
-    // Conditional update: `.eq("scanned", false)` makes this atomic — only the
-    // first scan of a pass matches, so two devices can't both approve it.
+    // Atomic: only the first scan of a pass matches `.eq("scanned", false)`.
     const { data, error } = await supabase
       .from("rsvps")
       .update({ scanned: true, scanned_at: new Date().toISOString() })
@@ -94,13 +91,11 @@ export default function ScannerPage() {
       setMessage("Could not verify. Please retry.");
       return;
     }
-
     if (!data || data.length === 0) {
       setStatus("error");
-      setMessage("⚠️ This pass has already been used.");
+      setMessage("This pass has already been used.");
       return;
     }
-
     setStatus("success");
     setMessage("Access granted.");
   };
@@ -122,86 +117,91 @@ export default function ScannerPage() {
 
   if (loading)
     return (
-      <div className="flex justify-center items-center h-screen">
-        <Loader2 className="animate-spin" />
+      <div className="flex h-screen items-center justify-center">
+        <Loader2 className="h-6 w-6 animate-spin text-brand" />
       </div>
     );
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4">
-      <Card className="max-w-md mx-auto mt-10">
-        <CardHeader>
-          <CardTitle className="text-center text-[#8B4F58]">
-            Gate Control
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
+    <div className="min-h-screen bg-muted/40">
+      <ScannerNavbar userEmail={user?.email ?? ""} />
+
+      <main className="mx-auto max-w-md space-y-5 px-4 py-8">
+        <div className="space-y-1 text-center">
+          <span className="eyebrow justify-center">Gate Control</span>
+          <h1 className="font-serif text-2xl text-brand">Scan Entry Pass</h1>
+        </div>
+
+        <div className="overflow-hidden rounded-3xl border border-border bg-card p-4 shadow-sm">
           {!scanned && (
-            <Scanner
-              onScan={handleScan}
-              onError={(error) => console.error("Scanner error:", error)}
-              constraints={{ facingMode: "environment" }}
-            />
+            <div className="space-y-3">
+              <div className="overflow-hidden rounded-2xl border border-border">
+                <Scanner
+                  onScan={handleScan}
+                  onError={(error) => console.error("Scanner error:", error)}
+                  constraints={{ facingMode: "environment" }}
+                />
+              </div>
+              <p className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
+                <ScanLine className="h-3.5 w-3.5" /> Point the camera at a guest&apos;s QR pass
+              </p>
+            </div>
           )}
 
           {status === "found" && guestData && (
-            <div className="bg-white border-2 border-[#8B4F58] rounded-2xl p-6 shadow-xl space-y-4">
-              <div className="text-center space-y-1">
-                <p className="text-sm text-gray-400 uppercase tracking-widest">
-                  Guest Details
-                </p>
-                <h2 className="text-2xl font-serif text-[#8B4F58]">
-                  {guestData.name}
-                </h2>
+            <div className="space-y-4 rounded-2xl border border-brand/30 bg-card p-5">
+              <div className="space-y-1 text-center">
+                <p className="text-xs uppercase tracking-widest text-muted-foreground">Guest Details</p>
+                <h2 className="font-serif text-2xl text-brand">{guestData.name}</h2>
               </div>
-
-              <div className="grid grid-cols-2 gap-4 py-4 border-y">
-                <div className="flex items-center gap-2 text-sm">
-                  <Users className="w-4 h-4" /> {guestData.total_guests} Guests
+              <div className="grid grid-cols-2 gap-3 border-y border-border py-4 text-sm">
+                <div className="flex items-center gap-2 text-foreground">
+                  <Users className="h-4 w-4 text-brand" /> {guestData.total_guests} Guests
                 </div>
-                <div className="flex items-center gap-2 text-sm font-mono">
-                  <Hash className="w-4 h-4" /> {guestData.pass_id}
+                <div className="flex items-center gap-2 font-mono text-foreground">
+                  <Hash className="h-4 w-4 text-brand" /> {guestData.pass_id}
                 </div>
-                <div className="col-span-2 flex items-center gap-2 text-sm">
-                  <Clock className="w-4 h-4" />
-                  Registered:{" "}
-                  {guestData.created_at
-                    ? new Date(guestData.created_at).toLocaleString()
-                    : "N/A"}
+                <div className="col-span-2 flex items-center gap-2 text-muted-foreground">
+                  <Clock className="h-4 w-4 text-brand" />
+                  Registered: {guestData.created_at ? new Date(guestData.created_at).toLocaleString() : "N/A"}
                 </div>
               </div>
-
               {guestData.scanned ? (
-                <div className="text-red-500 font-bold text-center">
-                  ⚠️ Already Used!
+                <div className="flex items-center justify-center gap-2 rounded-xl bg-red-50 p-3 font-semibold text-red-600">
+                  <XCircle className="h-5 w-5" /> Already Used!
                 </div>
               ) : (
-                <Button
+                <button
                   onClick={confirmVerification}
-                  className="w-full bg-[#8B4F58] hover:bg-[#723E46]"
+                  className="h-11 w-full rounded-xl bg-brand text-sm font-medium text-white transition hover:bg-brand-hover"
                 >
-                  Verify & Approve Entry
-                </Button>
+                  Verify &amp; Approve Entry
+                </button>
               )}
             </div>
           )}
 
           {status === "success" && (
-            <div className="text-green-600 text-center font-bold p-4 bg-green-50 rounded-xl">
-              ✅ {message}
+            <div className="flex items-center justify-center gap-2 rounded-xl bg-green-50 p-4 text-center font-semibold text-green-700">
+              <CheckCircle2 className="h-5 w-5" /> {message}
             </div>
           )}
           {status === "error" && (
-            <div className="text-red-600 text-center p-4">❌ {message}</div>
+            <div className="flex items-center justify-center gap-2 rounded-xl bg-red-50 p-4 text-center font-medium text-red-600">
+              <XCircle className="h-5 w-5" /> {message}
+            </div>
           )}
 
           {scanned && (
-            <Button variant="ghost" onClick={reset} className="w-full mt-4">
+            <button
+              onClick={reset}
+              className="mt-4 h-11 w-full rounded-xl border border-border text-sm font-medium text-brand transition hover:bg-accent"
+            >
               Scan Next
-            </Button>
+            </button>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </main>
     </div>
   );
 }

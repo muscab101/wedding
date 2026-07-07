@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { X, ChevronLeft, ChevronRight, Camera } from "lucide-react";
+import { X, ChevronLeft, ChevronRight } from "lucide-react";
 import Navbar from "../_components/Navbar";
 
 /**
@@ -34,7 +34,6 @@ export default function GalleryPage() {
     []
   );
 
-  // Keyboard navigation for the lightbox.
   useEffect(() => {
     if (active === null) return;
     const onKey = (e: KeyboardEvent) => {
@@ -49,22 +48,18 @@ export default function GalleryPage() {
   return (
     <>
       <Navbar />
-      <div className="w-full min-h-screen py-12 px-4 max-w-6xl mx-auto space-y-10">
-        {/* Header */}
-        <div className="text-center space-y-3">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-[#8B4F58]/10 bg-white/50 text-xs font-medium uppercase tracking-widest text-[#8B4F58]">
-            <Camera className="w-3.5 h-3.5" /> Our Moments
-          </div>
-          <h1 className="text-4xl md:text-5xl font-serif text-[#8B4F58] tracking-tight">
+      <main className="mx-auto min-h-screen w-full max-w-6xl space-y-12 px-5 py-14 sm:px-8">
+        <header className="space-y-3 text-center">
+          <span className="eyebrow">Our moments</span>
+          <h1 className="font-serif text-4xl tracking-tight text-brand sm:text-5xl">
             Captured Memories
           </h1>
-          <p className="text-gray-400 text-sm max-w-md mx-auto">
+          <p className="mx-auto max-w-md text-sm text-muted-foreground">
             A glimpse into our journey together. Tap any photo to view it up close.
           </p>
-        </div>
+        </header>
 
-        {/* Masonry grid */}
-        <div className="columns-2 md:columns-3 gap-4 [column-fill:_balance]">
+        <div className="columns-2 gap-4 [column-fill:_balance] md:columns-3">
           {PHOTOS.map((photo, i) => (
             <motion.button
               key={photo.src}
@@ -73,7 +68,7 @@ export default function GalleryPage() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-60px" }}
               transition={{ duration: 0.6, delay: (i % 3) * 0.08, ease: [0.16, 1, 0.3, 1] }}
-              className="group mb-4 block w-full break-inside-avoid overflow-hidden rounded-2xl border border-[#8B4F58]/5 shadow-sm relative cursor-pointer"
+              className="group relative mb-4 block w-full cursor-pointer break-inside-avoid overflow-hidden rounded-2xl border border-border"
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
@@ -82,21 +77,20 @@ export default function GalleryPage() {
                 loading="lazy"
                 className="w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-4">
-                <span className="text-white text-sm font-medium font-serif tracking-wide">
+              <div className="absolute inset-0 flex items-end bg-gradient-to-t from-black/50 via-transparent to-transparent p-4 opacity-0 transition-opacity group-hover:opacity-100">
+                <span className="font-serif text-sm tracking-wide text-white">
                   {photo.caption}
                 </span>
               </div>
             </motion.button>
           ))}
         </div>
-      </div>
+      </main>
 
-      {/* Lightbox */}
       <AnimatePresence>
         {active !== null && (
           <motion.div
-            className="fixed inset-0 z-[90] bg-black/85 backdrop-blur-sm flex items-center justify-center p-4"
+            className="fixed inset-0 z-[90] flex items-center justify-center bg-black/85 p-4 backdrop-blur-sm"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -104,18 +98,17 @@ export default function GalleryPage() {
           >
             <button
               onClick={close}
-              className="absolute top-5 right-5 text-white/80 hover:text-white p-2 rounded-full hover:bg-white/10 transition-colors"
+              className="absolute right-5 top-5 rounded-full p-2 text-white/80 transition-colors hover:bg-white/10 hover:text-white"
               aria-label="Close"
             >
-              <X className="w-6 h-6" />
+              <X className="h-6 w-6" />
             </button>
-
             <button
               onClick={(e) => { e.stopPropagation(); prev(); }}
-              className="absolute left-4 md:left-8 text-white/80 hover:text-white p-2 rounded-full hover:bg-white/10 transition-colors"
+              className="absolute left-4 rounded-full p-2 text-white/80 transition-colors hover:bg-white/10 hover:text-white md:left-8"
               aria-label="Previous"
             >
-              <ChevronLeft className="w-8 h-8" />
+              <ChevronLeft className="h-8 w-8" />
             </button>
 
             <motion.div
@@ -124,25 +117,25 @@ export default function GalleryPage() {
               animate={{ scale: 1, opacity: 1 }}
               transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
               onClick={(e) => e.stopPropagation()}
-              className="max-w-3xl w-full text-center space-y-3"
+              className="w-full max-w-3xl space-y-3 text-center"
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={PHOTOS[active].src}
                 alt={PHOTOS[active].caption}
-                className="w-full max-h-[80vh] object-contain rounded-2xl shadow-2xl"
+                className="max-h-[80vh] w-full rounded-2xl object-contain shadow-2xl"
               />
-              <p className="text-white/90 font-serif text-lg tracking-wide">
+              <p className="font-serif text-lg tracking-wide text-white/90">
                 {PHOTOS[active].caption}
               </p>
             </motion.div>
 
             <button
               onClick={(e) => { e.stopPropagation(); next(); }}
-              className="absolute right-4 md:right-8 text-white/80 hover:text-white p-2 rounded-full hover:bg-white/10 transition-colors"
+              className="absolute right-4 rounded-full p-2 text-white/80 transition-colors hover:bg-white/10 hover:text-white md:right-8"
               aria-label="Next"
             >
-              <ChevronRight className="w-8 h-8" />
+              <ChevronRight className="h-8 w-8" />
             </button>
           </motion.div>
         )}

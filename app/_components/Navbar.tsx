@@ -6,11 +6,7 @@ import type { User } from "@supabase/supabase-js";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 
-// Lucide Icons
-import { Heart, Home, QrCode, MapPin, MessageSquareHeart, LogOut, LayoutDashboard, Camera } from "lucide-react";
-
-// Shadcn UI Components
-import { Button } from "@/components/ui/button";
+import { LogOut, LayoutDashboard, Menu, X } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,9 +17,18 @@ import {
   DropdownMenuGroup,
 } from "@/components/ui/dropdown-menu";
 
+const navItems = [
+  { name: "Home", href: "/dashboard" },
+  { name: "RSVP & Pass", href: "/rsvp" },
+  { name: "Venue", href: "/venue" },
+  { name: "Gallery", href: "/gallery" },
+  { name: "Wishes", href: "/wishes" },
+];
+
 export default function Navbar() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [open, setOpen] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
 
@@ -32,27 +37,25 @@ export default function Navbar() {
       setUser(data.session?.user ?? null);
       setLoading(false);
     });
-
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
       setLoading(false);
     });
-
     return () => subscription.unsubscribe();
   }, []);
 
   const handleLogout = async () => {
     try {
       await supabase.auth.signOut();
-      router.push("/singin");
+      router.push("/login");
     } catch (err) {
       console.error("Logout error:", err);
     }
   };
 
-  // Profile details from the auth provider (e.g. Google supplies avatar + name).
+  // Profile details from the auth provider (Google supplies avatar + name).
   const meta = (user?.user_metadata ?? {}) as {
     avatar_url?: string;
     picture?: string;
@@ -62,134 +65,152 @@ export default function Navbar() {
   const avatarUrl = meta.avatar_url || meta.picture || null;
   const displayName = meta.full_name || meta.name || user?.email || "Guest";
 
-  // Guest navigation items
-  const navItems = [
-    { name: "Home", href: "/dashboard", icon: Home },
-    { name: "RSVP & Pass", href: "/rsvp", icon: QrCode },
-    { name: "Venue / Location", href: "/venue", icon: MapPin },
-    { name: "Gallery", href: "/gallery", icon: Camera },
-    { name: "Wishes & Videos", href: "/wishes", icon: MessageSquareHeart },
-  ];
-
   return (
-    <div className="w-full bg-transparent px-3 py-4 sticky top-0 z-50 flex justify-center">
-      <nav className="w-full max-w-6xl bg-white/90 backdrop-blur-md border border-[#8B4F58]/10 shadow-[0_4px_20px_-4px_rgba(139,79,88,0.1)] rounded-full px-4 sm:px-6 py-3 flex items-center justify-between transition-all duration-300">
-        
-        {/* Left: Logo (C & A & Heart) */}
-        <Link href="/" className="flex items-center gap-1.5 group pl-1 shrink-0">
-          <Heart className="w-6 h-6 fill-[#8B4F58] text-[#8B4F58] transition-transform group-hover:scale-110 duration-300" />
-          {/* The "C & A" text hides on very small screens to make room for the center menu */}
-          <span className="text-xl font-serif font-semibold text-[#8B4F58] tracking-wider hidden sm:inline">
-            C &amp; A
+    <header className="sticky top-0 z-50 w-full border-b border-border/70 bg-background/80 backdrop-blur-md">
+      <nav className="mx-auto flex h-16 max-w-6xl items-center justify-between px-5 sm:px-8">
+        {/* Monogram */}
+        <Link href="/" className="shrink-0">
+          <span className="font-serif text-2xl tracking-tight text-brand">
+            A <span className="text-brand/40">&amp;</span> C
           </span>
         </Link>
 
-        {/* Center: Menu links (responsive) */}
-        {/* `gap-6 sm:gap-8` tightens the icons together on mobile */}
-        <div className="flex items-center gap-6 sm:gap-8 justify-center mx-auto">
+        {/* Desktop links */}
+        <div className="hidden items-center gap-8 md:flex">
           {navItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = pathname === item.href;
-            
+            const active = pathname === item.href;
             return (
               <Link
                 key={item.name}
                 href={item.href}
-                className={`relative flex items-center gap-1.5 text-sm font-medium transition-all duration-200 pb-1.5 ${
-                  isActive 
-                    ? "text-[#8B4F58]" 
-                    : "text-gray-500 hover:text-[#8B4F58]"
+                className={`relative text-sm transition-colors ${
+                  active
+                    ? "text-brand"
+                    : "text-muted-foreground hover:text-brand"
                 }`}
               >
-                {/* The icon is always visible */}
-                <Icon className={`w-5 h-5 sm:w-4 sm:h-4 ${isActive ? "text-[#8B4F58]" : "text-gray-400 hover:text-[#8B4F58]"}`} />
-                
-                {/* The label (`item.name`) hides below the md (desktop) breakpoint */}
-                <span className="hidden md:inline">{item.name}</span>
-                
-                {/* Modern active dot beneath the current icon */}
-                {isActive && (
-                  <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1 h-1 bg-[#8B4F58] rounded-full" />
+                {item.name}
+                {active && (
+                  <span className="absolute -bottom-[22px] left-0 h-px w-full bg-brand" />
                 )}
               </Link>
             );
           })}
         </div>
 
-        {/* Right: Profile dropdown or login buttons */}
-        <div className="flex items-center gap-2 pr-1 shrink-0">
-          {!loading && (
-            <>
-              {user ? (
-                <DropdownMenu>
-                  <DropdownMenuTrigger className="relative h-9 w-9 rounded-full bg-[#FFF0F5] border border-[#8B4F58]/20 flex items-center justify-center text-[#8B4F58] font-bold text-sm uppercase hover:bg-[#FFE4E1] cursor-pointer outline-none transition-all shadow-sm overflow-hidden">
-                    {avatarUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={avatarUrl}
-                        alt={displayName}
-                        referrerPolicy="no-referrer"
-                        className="h-full w-full object-cover"
-                      />
-                    ) : (
-                      user.email?.charAt(0) || "G"
-                    )}
-                  </DropdownMenuTrigger>
-                  
-                  <DropdownMenuContent className="w-54 bg-white border-[#8B4F58]/10 rounded-2xl shadow-xl mt-3 p-1.5" align="end">
-                    <DropdownMenuGroup>
-                      <DropdownMenuLabel className="font-serif text-[#8B4F58] text-sm px-2.5 pt-2 truncate">
-                        {displayName}
-                      </DropdownMenuLabel>
-                      <div className="px-2.5 pb-2 text-xs text-gray-400 truncate">
-                        {user.email}
-                      </div>
-                    </DropdownMenuGroup>
+        {/* Right side */}
+        <div className="flex items-center gap-2">
+          {!loading &&
+            (user ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border border-border bg-accent text-sm font-semibold uppercase text-brand outline-none transition hover:border-brand/40">
+                  {avatarUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={avatarUrl}
+                      alt={displayName}
+                      referrerPolicy="no-referrer"
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    user.email?.charAt(0) || "G"
+                  )}
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  className="mt-2 w-56 rounded-2xl border-border p-1.5 shadow-lg"
+                  align="end"
+                >
+                  <DropdownMenuGroup>
+                    <DropdownMenuLabel className="truncate px-2.5 pt-2 font-serif text-sm text-brand">
+                      {displayName}
+                    </DropdownMenuLabel>
+                    <div className="truncate px-2.5 pb-2 text-xs text-muted-foreground">
+                      {user.email}
+                    </div>
+                  </DropdownMenuGroup>
+                  <DropdownMenuSeparator className="my-1" />
+                  <DropdownMenuItem
+                    onClick={() => router.push("/dashboard")}
+                    className="flex cursor-pointer items-center gap-2 rounded-xl px-2.5 py-2 text-sm text-foreground focus:bg-accent focus:text-brand"
+                  >
+                    <LayoutDashboard className="h-4 w-4 text-muted-foreground" />
+                    Dashboard
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator className="my-1" />
+                  <DropdownMenuItem
+                    onClick={handleLogout}
+                    className="flex cursor-pointer items-center gap-2 rounded-xl px-2.5 py-2 text-sm text-red-600 focus:bg-red-50 focus:text-red-700"
+                  >
+                    <LogOut className="h-4 w-4 text-red-400" />
+                    Log Out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <div className="hidden items-center gap-1 sm:flex">
+                <button
+                  onClick={() => router.push("/login")}
+                  className="rounded-full px-4 py-2 text-sm text-muted-foreground transition hover:text-brand"
+                >
+                  Sign In
+                </button>
+                <button
+                  onClick={() => router.push("/register")}
+                  className="rounded-full bg-brand px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-brand-hover"
+                >
+                  Register
+                </button>
+              </div>
+            ))}
 
-                    <DropdownMenuSeparator className="bg-gray-100 my-1" />
-                    
-                    <DropdownMenuItem 
-                      onClick={() => router.push("/dashboard")}
-                      className="cursor-pointer focus:bg-[#FFF0F5] focus:text-[#8B4F58] rounded-xl flex items-center gap-2 py-2 px-2.5 text-gray-600 text-sm"
-                    >
-                      <LayoutDashboard className="w-4 h-4 text-gray-400" />
-                      Dashboard
-                    </DropdownMenuItem>
-                    
-                    <DropdownMenuSeparator className="bg-gray-100 my-1" />
-                    
-                    <DropdownMenuItem 
-                      onClick={handleLogout}
-                      className="cursor-pointer text-red-600 focus:bg-red-50 focus:text-red-700 rounded-xl flex items-center gap-2 py-2 px-2.5 text-sm"
-                    >
-                      <LogOut className="w-4 h-4 text-red-400" />
-                      Log Out
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              ) : (
-                <div className="flex items-center gap-1 sm:gap-2">
-                  <Button 
-                    variant="ghost" 
-                    onClick={() => router.push("/singin")}
-                    className="text-gray-500 hover:text-[#8B4F58] hover:bg-[#FFF0F5] rounded-full font-medium text-xs h-8 px-2.5 sm:px-4"
-                  >
-                    Sign In
-                  </Button>
-                  {/* Register hides on small mobile to save space */}
-                  <Button 
-                    onClick={() => router.push("/register")}
-                    className="bg-[#8B4F58] hover:bg-[#723E46] text-white rounded-full font-medium text-xs h-8 px-3 shadow-sm hidden sm:inline-flex"
-                  >
-                    Register
-                  </Button>
-                </div>
-              )}
-            </>
-          )}
+          {/* Mobile menu toggle */}
+          <button
+            onClick={() => setOpen((v) => !v)}
+            className="flex h-9 w-9 items-center justify-center rounded-full text-brand md:hidden"
+            aria-label="Toggle menu"
+          >
+            {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </button>
         </div>
-
       </nav>
-    </div>
+
+      {/* Mobile menu */}
+      {open && (
+        <div className="border-t border-border/70 bg-background px-5 py-3 md:hidden">
+          <div className="flex flex-col">
+            {navItems.map((item) => (
+              <Link
+                key={item.name}
+                href={item.href}
+                onClick={() => setOpen(false)}
+                className={`rounded-lg px-3 py-2.5 text-sm ${
+                  pathname === item.href
+                    ? "bg-accent text-brand"
+                    : "text-muted-foreground hover:bg-muted"
+                }`}
+              >
+                {item.name}
+              </Link>
+            ))}
+            {!user && (
+              <div className="mt-2 flex gap-2 border-t border-border/70 pt-3">
+                <button
+                  onClick={() => router.push("/login")}
+                  className="flex-1 rounded-full border border-border px-4 py-2 text-sm text-brand"
+                >
+                  Sign In
+                </button>
+                <button
+                  onClick={() => router.push("/register")}
+                  className="flex-1 rounded-full bg-brand px-4 py-2 text-sm font-medium text-white"
+                >
+                  Register
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </header>
   );
 }

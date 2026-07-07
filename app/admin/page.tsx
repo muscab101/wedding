@@ -3,34 +3,22 @@
 import { useEffect, useState } from "react";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { supabase } from "@/lib/supabase";
-
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, CheckCircle2, MessageSquare, Video, Loader2 } from "lucide-react";
 import { AdminSidebar } from "./_components/admin-sidebar";
 
 export default function AdminDashboard() {
   const { loading } = useAdminAuth();
-  const [stats, setStats] = useState({
-    guests: 0,
-    scanned: 0,
-    messages: 0,
-    videos: 0,
-  });
+  const [stats, setStats] = useState({ guests: 0, scanned: 0, messages: 0, videos: 0 });
 
   useEffect(() => {
     if (loading) return;
-
-    // Count each table with head-only count queries (no rows transferred).
     const fetchData = async () => {
       const countOf = (table: string) =>
         supabase.from(table).select("*", { count: "exact", head: true });
 
       const [guests, scanned, messages, videos] = await Promise.all([
         countOf("rsvps"),
-        supabase
-          .from("rsvps")
-          .select("*", { count: "exact", head: true })
-          .eq("scanned", true),
+        supabase.from("rsvps").select("*", { count: "exact", head: true }).eq("scanned", true),
         countOf("wishes"),
         countOf("videos"),
       ]);
@@ -42,36 +30,45 @@ export default function AdminDashboard() {
         videos: videos.count ?? 0,
       });
     };
-
     fetchData();
   }, [loading]);
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="animate-spin" /></div>;
+  if (loading)
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <Loader2 className="h-6 w-6 animate-spin text-brand" />
+      </div>
+    );
+
+  const cards = [
+    { title: "Total Guests", value: stats.guests, icon: Users, color: "text-brand" },
+    { title: "Checked In", value: stats.scanned, icon: CheckCircle2, color: "text-green-600" },
+    { title: "Messages", value: stats.messages, icon: MessageSquare, color: "text-blue-600" },
+    { title: "Video Clips", value: stats.videos, icon: Video, color: "text-amber-600" },
+  ];
 
   return (
-    <div className="flex bg-[#FFF0F5]/20 min-h-screen text-black">
+    <div className="flex min-h-screen bg-muted/30">
       <AdminSidebar />
-      <main className="flex-1 p-8 space-y-6 max-w-6xl">
+      <main className="flex-1 space-y-8 p-6 md:p-10">
         <header>
-          <h1 className="text-3xl font-serif text-[#8B4F58]">System Dashboard</h1>
-          <p className="text-gray-500">Real-time overview of wedding analytics.</p>
+          <h1 className="font-serif text-3xl tracking-tight text-brand">System Dashboard</h1>
+          <p className="mt-1 text-sm text-muted-foreground">Real-time overview of your wedding.</p>
         </header>
 
-        <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-          {[
-            { title: "Total Guests", value: stats.guests, icon: Users, color: "text-[#8B4F58]" },
-            { title: "Checked In", value: stats.scanned, icon: CheckCircle2, color: "text-green-600" },
-            { title: "Messages", value: stats.messages, icon: MessageSquare, color: "text-blue-600" },
-            { title: "Rendered Clips", value: stats.videos, icon: Video, color: "text-amber-600" },
-          ].map((stat, i) => (
-            <Card key={i} className="shadow-lg shadow-[#8B4F58]/5 border-[#8B4F58]/10 rounded-2xl">
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-xs font-bold uppercase text-gray-400">{stat.title}</CardTitle>
-                <stat.icon className={`h-4 w-4 ${stat.color}`} />
-              </CardHeader>
-              <CardContent><div className="text-2xl font-bold">{stat.value}</div></CardContent>
-            </Card>
-          ))}
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          {cards.map((c) => {
+            const Icon = c.icon;
+            return (
+              <div key={c.title} className="rounded-2xl border border-border bg-card p-5">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{c.title}</span>
+                  <Icon className={`h-4 w-4 ${c.color}`} />
+                </div>
+                <div className="mt-3 font-serif text-4xl text-foreground tabular-nums">{c.value}</div>
+              </div>
+            );
+          })}
         </div>
       </main>
     </div>

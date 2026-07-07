@@ -3,7 +3,6 @@
 import React from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
 import { LogOut, ScanLine } from "lucide-react";
 
 export function ScannerNavbar({ userEmail }: { userEmail: string }) {
@@ -15,37 +14,32 @@ export function ScannerNavbar({ userEmail }: { userEmail: string }) {
   };
 
   return (
-    <header className="w-full border-b border-[#8B4F58]/10 bg-white sticky top-0 z-50">
-      <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
-        {/* Logo / Title */}
+    <header className="sticky top-0 z-50 w-full border-b border-border bg-background/80 backdrop-blur-md">
+      <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-4">
         <div className="flex items-center gap-2">
-          <div className="bg-[#FFF0F5] p-2 rounded-xl text-[#8B4F58]">
+          <div className="rounded-xl bg-accent p-2 text-brand">
             <ScanLine className="h-5 w-5" />
           </div>
-          <div>
-            <span className="font-serif font-bold text-lg text-[#8B4F58]">Wedding Portal</span>
-            <span className="ml-2 text-xs bg-[#8B4F58]/10 text-[#8B4F58] px-2 py-0.5 rounded-full font-medium">
-              Scanner Mode
+          <div className="flex items-center gap-2">
+            <span className="font-serif text-lg font-semibold text-brand">Wedding Portal</span>
+            <span className="rounded-full bg-accent px-2 py-0.5 text-xs font-medium text-brand">
+              Scanner
             </span>
           </div>
         </div>
 
-        {/* User Info & Logout */}
         <div className="flex items-center gap-4">
-          <div className="hidden sm:block text-right">
-            <p className="text-xs text-gray-400 font-medium">Logged in as</p>
-            <p className="text-sm font-medium text-gray-700">{userEmail}</p>
+          <div className="hidden text-right sm:block">
+            <p className="text-xs font-medium text-muted-foreground">Logged in as</p>
+            <p className="text-sm font-medium text-foreground">{userEmail}</p>
           </div>
-          
-          <Button 
-            variant="outline" 
-            size="sm"
+          <button
             onClick={handleLogout}
-            className="border-gray-200 hover:bg-red-50 hover:text-red-600 hover:border-red-100 rounded-xl gap-2 transition-all"
+            className="flex items-center gap-2 rounded-xl border border-border px-3 py-2 text-sm text-foreground transition hover:border-red-100 hover:bg-red-50 hover:text-red-600"
           >
             <LogOut className="h-4 w-4" />
-            <span className="hidden xs:inline">Logout</span>
-          </Button>
+            <span className="hidden sm:inline">Logout</span>
+          </button>
         </div>
       </div>
     </header>

@@ -5,28 +5,22 @@ import { supabase } from "@/lib/supabase";
 import { motion } from "framer-motion";
 import type { User } from "@supabase/supabase-js";
 import type { Wish, VideoItem } from "@/lib/types";
-
-// Lucide Icons
-import { 
+import {
   MessageSquareHeart,
   Heart,
   Video,
-  Sparkles, 
-  Send, 
-  UploadCloud, 
-  Film, 
-  Loader2, 
-  X, 
-  CheckCircle, 
-  AlertCircle, 
-  Pencil, 
-  Trash2, 
-  Check, 
-  XCircle 
+  Send,
+  UploadCloud,
+  Film,
+  Loader2,
+  X,
+  CheckCircle,
+  AlertCircle,
+  Pencil,
+  Trash2,
+  Check,
+  XCircle,
 } from "lucide-react";
-
-// Shadcn UI Components
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -39,108 +33,80 @@ interface CustomToast {
 }
 
 export default function WishesAndVideosPage() {
-  const [activeTab, setActiveTab] = useState("wishes");
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-
-  // Custom Inline Toast State
   const [toastNotification, setToastNotification] = useState<CustomToast | null>(null);
 
   const showToast = ({ title, description, variant = "default" }: CustomToast) => {
     setToastNotification({ title, description, variant });
-    setTimeout(() => {
-      setToastNotification(null);
-    }, 4000);
+    setTimeout(() => setToastNotification(null), 4000);
   };
 
-  // Loading & Data States
   const [wishes, setWishes] = useState<Wish[]>([]);
   const [videos, setVideos] = useState<VideoItem[]>([]);
   const [wishesLoading, setWishesLoading] = useState(true);
   const [videosLoading, setVideosLoading] = useState(true);
 
-  // Form States
   const [formData, setFormData] = useState({ name: "", relation: "", text: "" });
   const [submittingWish, setSubmittingWish] = useState(false);
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [uploadingVideo, setUploadingVideo] = useState(false);
 
-  // Edit State for Wishes
   const [editingWishId, setEditingWishId] = useState<string | null>(null);
-  const [editText, setEditText] = useState<string>("");
-  const [updatingWish, setUpdatingWish] = useState<boolean>(false);
+  const [editText, setEditText] = useState("");
+  const [updatingWish, setUpdatingWish] = useState(false);
 
-  // Wishes this device has already liked (persisted so a like sticks & can't repeat).
   const [likedWishes, setLikedWishes] = useState<Set<string>>(new Set());
   useEffect(() => {
     const saved = localStorage.getItem("liked_wishes");
     if (saved) setLikedWishes(new Set(JSON.parse(saved)));
   }, []);
 
-  // Monitor Auth State
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) =>
-      setCurrentUser(data.session?.user ?? null)
-    );
+    supabase.auth.getSession().then(({ data }) => setCurrentUser(data.session?.user ?? null));
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) =>
-      setCurrentUser(session?.user ?? null)
-    );
+    } = supabase.auth.onAuthStateChange((_event, session) => setCurrentUser(session?.user ?? null));
     return () => subscription.unsubscribe();
   }, []);
 
-  // Fetch Wishes (with live updates)
   useEffect(() => {
     const load = async () => {
-      const { data } = await supabase
-        .from("wishes")
-        .select("*")
-        .order("created_at", { ascending: false });
+      const { data } = await supabase.from("wishes").select("*").order("created_at", { ascending: false });
       setWishes((data ?? []) as Wish[]);
       setWishesLoading(false);
     };
     load();
-
     const channel = supabase
       .channel("wishes-feed-changes")
       .on("postgres_changes", { event: "*", schema: "public", table: "wishes" }, load)
       .subscribe();
-
     return () => {
       supabase.removeChannel(channel);
     };
   }, []);
 
-  // Fetch Videos (with live updates)
   useEffect(() => {
     const load = async () => {
-      const { data } = await supabase
-        .from("videos")
-        .select("*")
-        .order("created_at", { ascending: false });
+      const { data } = await supabase.from("videos").select("*").order("created_at", { ascending: false });
       setVideos((data ?? []) as VideoItem[]);
       setVideosLoading(false);
     };
     load();
-
     const channel = supabase
       .channel("videos-feed-changes")
       .on("postgres_changes", { event: "*", schema: "public", table: "videos" }, load)
       .subscribe();
-
     return () => {
       supabase.removeChannel(channel);
     };
   }, []);
 
-  // Handle Wish Submission
   const handleWishSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name || !formData.text) {
       showToast({ title: "Error", description: "Please fill in your name and message.", variant: "destructive" });
       return;
     }
-
     setSubmittingWish(true);
     try {
       const { error } = await supabase.from("wishes").insert({
@@ -159,7 +125,6 @@ export default function WishesAndVideosPage() {
     }
   };
 
-  // Update Wish Function
   const handleUpdateWish = async (id: string) => {
     if (!editText.trim()) {
       showToast({ title: "Error", description: "Message cannot be empty.", variant: "destructive" });
@@ -179,35 +144,27 @@ export default function WishesAndVideosPage() {
     }
   };
 
-  // Like a wish — optimistic bump + atomic DB increment. One like per wish per
-  // device (tracked in localStorage) so a guest can't spam the count.
+  // One like per wish per device — optimistic bump + atomic DB increment.
   const handleLikeWish = async (id: string) => {
     if (likedWishes.has(id)) return;
-
     const nextLiked = new Set(likedWishes).add(id);
     setLikedWishes(nextLiked);
     localStorage.setItem("liked_wishes", JSON.stringify([...nextLiked]));
-    setWishes((prev) =>
-      prev.map((w) => (w.id === id ? { ...w, likes: (w.likes ?? 0) + 1 } : w))
-    );
+    setWishes((prev) => prev.map((w) => (w.id === id ? { ...w, likes: (w.likes ?? 0) + 1 } : w)));
 
     const { error } = await supabase.rpc("increment_wish_likes", { wish_id: id });
     if (error) {
       console.error("Failed to like wish:", error);
-      // Roll back on failure.
       const reverted = new Set(nextLiked);
       reverted.delete(id);
       setLikedWishes(reverted);
       localStorage.setItem("liked_wishes", JSON.stringify([...reverted]));
-      setWishes((prev) =>
-        prev.map((w) => (w.id === id ? { ...w, likes: Math.max(0, (w.likes ?? 1) - 1) } : w))
-      );
+      setWishes((prev) => prev.map((w) => (w.id === id ? { ...w, likes: Math.max(0, (w.likes ?? 1) - 1) } : w)));
     }
   };
 
-  // Delete Wish Function
   const handleDeleteWish = async (id: string) => {
-    if (!window.confirm("Ma hubtaa inaad tirto fariintan?")) return;
+    if (!window.confirm("Are you sure you want to delete this message?")) return;
     try {
       const { error } = await supabase.from("wishes").delete().eq("id", id);
       if (error) throw error;
@@ -218,9 +175,8 @@ export default function WishesAndVideosPage() {
     }
   };
 
-  // Delete Video Function
   const handleDeleteVideo = async (id: string) => {
-    if (!window.confirm("Ma hubtaa inaad tirto muuqaalkan?")) return;
+    if (!window.confirm("Are you sure you want to delete this video?")) return;
     try {
       const { error } = await supabase.from("videos").delete().eq("id", id);
       if (error) throw error;
@@ -231,11 +187,9 @@ export default function WishesAndVideosPage() {
     }
   };
 
-  // Handle Video Upload (Supabase Storage -> public URL -> videos table)
   const handleVideoUpload = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!videoFile) return;
-
     setUploadingVideo(true);
     try {
       const filePath = `${Date.now()}_${videoFile.name.replace(/\s+/g, "_")}`;
@@ -264,211 +218,197 @@ export default function WishesAndVideosPage() {
     }
   };
 
+  const tabTrigger =
+    "flex items-center gap-2 rounded-full px-6 h-10 text-sm font-medium transition data-[state=active]:bg-brand data-[state=active]:text-white";
+
   return (
     <>
       <Navbar />
-      <div className="w-full min-h-screen py-12 px-4 max-w-6xl mx-auto space-y-10 relative">
-        
-        {/* Custom Tailwind Floating Toast Notification */}
+      <main className="relative mx-auto min-h-screen w-full max-w-6xl space-y-10 px-5 py-14 sm:px-8">
         {toastNotification && (
-          <div className={`fixed bottom-5 right-5 z-50 flex items-start gap-3 p-4 rounded-xl border shadow-lg max-w-sm animate-in fade-in slide-in-from-bottom-5 duration-300 ${
-            toastNotification.variant === "destructive" 
-              ? "bg-red-50 border-red-200 text-red-800" 
-              : "bg-white border-gray-100 text-gray-800"
-          }`}>
+          <div
+            className={`fixed bottom-5 right-5 z-50 flex max-w-sm items-start gap-3 rounded-xl border p-4 shadow-lg ${
+              toastNotification.variant === "destructive"
+                ? "border-red-200 bg-red-50 text-red-800"
+                : "border-border bg-card text-foreground"
+            }`}
+          >
             {toastNotification.variant === "destructive" ? (
-              <AlertCircle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
+              <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-red-600" />
             ) : (
-              <CheckCircle className="w-5 h-5 text-green-600 shrink-0 mt-0.5" />
+              <CheckCircle className="mt-0.5 h-5 w-5 shrink-0 text-green-600" />
             )}
             <div className="flex-1 space-y-1">
               <h5 className="text-sm font-semibold">{toastNotification.title}</h5>
               <p className="text-xs opacity-90">{toastNotification.description}</p>
             </div>
-            <button onClick={() => setToastNotification(null)} className="text-gray-400 hover:text-gray-600 transition-colors">
-              <X className="w-4 h-4" />
+            <button onClick={() => setToastNotification(null)} className="text-muted-foreground hover:text-foreground">
+              <X className="h-4 w-4" />
             </button>
           </div>
         )}
 
-        {/* Page Header */}
-        <div className="text-center space-y-3">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-[#8B4F58]/10 bg-white/50 text-xs font-medium uppercase tracking-widest text-[#8B4F58]">
-            <Sparkles className="w-3.5 h-3.5 animate-pulse" /> Guest Interaction Wall
-          </div>
-          <h1 className="text-4xl md:text-5xl font-serif text-[#8B4F58] tracking-tight">Wishes &amp; Videos</h1>
-          <p className="text-gray-400 text-sm max-w-md mx-auto">
-            Share your love, blessing messages, or a short video clip with the happy couple.
+        <header className="space-y-3 text-center">
+          <span className="eyebrow">Guest wall</span>
+          <h1 className="font-serif text-4xl tracking-tight text-brand sm:text-5xl">Wishes &amp; Videos</h1>
+          <p className="mx-auto max-w-md text-sm text-muted-foreground">
+            Share your love, a blessing, or a short video clip with the happy couple.
           </p>
-        </div>
+        </header>
 
-        {/* Tabs Control Panel */}
-        <Tabs defaultValue="wishes" className="w-full space-y-12" onValueChange={setActiveTab}>
+        <Tabs defaultValue="wishes" className="w-full space-y-12">
           <div className="flex justify-center">
-            <TabsList className="bg-white/60 border border-[#8B4F58]/10 p-1 rounded-full h-12 shadow-sm">
-              <TabsTrigger value="wishes" className="rounded-full px-6 h-10 data-[state=active]:bg-[#8B4F58] data-[state=active]:text-white font-medium text-sm flex items-center gap-2 transition-all">
-                <MessageSquareHeart className="w-4 h-4" /> Warm Wishes
+            <TabsList className="h-12 rounded-full border border-border bg-card p-1">
+              <TabsTrigger value="wishes" className={tabTrigger}>
+                <MessageSquareHeart className="h-4 w-4" /> Warm Wishes
               </TabsTrigger>
-              <TabsTrigger value="videos" className="rounded-full px-6 h-10 data-[state=active]:bg-[#8B4F58] data-[state=active]:text-white font-medium text-sm flex items-center gap-2 transition-all">
-                <Video className="w-4 h-4" /> Video Clips
+              <TabsTrigger value="videos" className={tabTrigger}>
+                <Video className="h-4 w-4" /> Video Clips
               </TabsTrigger>
             </TabsList>
           </div>
 
-          {/* =========================================================================
-              TAB 1: WARM WISHES
-              ========================================================================= */}
-          <TabsContent value="wishes" className="grid grid-cols-1 lg:grid-cols-12 gap-8 outline-none">
-            
-            {/* Wish Submission Form */}
-            <div className="lg:col-span-5 bg-white/60 backdrop-blur-sm border border-[#8B4F58]/10 p-6 md:p-8 rounded-[32px] shadow-sm h-fit space-y-6">
+          {/* WISHES */}
+          <TabsContent value="wishes" className="grid grid-cols-1 gap-8 outline-none lg:grid-cols-12">
+            <div className="h-fit space-y-6 rounded-3xl border border-border bg-card p-6 md:p-8 lg:col-span-5">
               <div className="space-y-1">
-                <h3 className="text-xl font-serif text-[#8B4F58] font-semibold">Write a Blessing</h3>
-                <p className="text-xs text-gray-400">Your message will appear instantly on the live public wall.</p>
+                <h3 className="font-serif text-xl font-semibold text-brand">Write a Blessing</h3>
+                <p className="text-xs text-muted-foreground">Your message appears instantly on the live wall.</p>
               </div>
-
               <form onSubmit={handleWishSubmit} className="space-y-4">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-gray-500">Your Full Name</label>
-                  <Input 
-                    placeholder="e.g., Ahmed Mohamed" 
+                  <label className="text-xs font-medium text-muted-foreground">Your Full Name</label>
+                  <Input
+                    placeholder="e.g., Ahmed Mohamed"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="rounded-xl border-gray-200 bg-white focus-visible:ring-[#8B4F58]"
+                    className="h-11 rounded-xl"
                   />
                 </div>
-
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-gray-500">Relation (Optional)</label>
-                  <Input 
-                    placeholder="e.g., Groom's Cousin, Friend" 
+                  <label className="text-xs font-medium text-muted-foreground">Relation (optional)</label>
+                  <Input
+                    placeholder="e.g., Groom's Cousin, Friend"
                     value={formData.relation}
                     onChange={(e) => setFormData({ ...formData, relation: e.target.value })}
-                    className="rounded-xl border-gray-200 bg-white focus-visible:ring-[#8B4F58]"
+                    className="h-11 rounded-xl"
                   />
                 </div>
-
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-gray-500">Message</label>
-                  <Textarea 
-                    placeholder="Write your beautiful congrats message here..." 
+                  <label className="text-xs font-medium text-muted-foreground">Message</label>
+                  <Textarea
+                    placeholder="Write your congratulations here..."
                     rows={4}
                     value={formData.text}
                     onChange={(e) => setFormData({ ...formData, text: e.target.value })}
-                    className="rounded-xl border-gray-200 bg-white focus-visible:ring-[#8B4F58] resize-none"
+                    className="resize-none rounded-xl"
                   />
                 </div>
-
-                <Button 
-                  type="submit" 
+                <button
+                  type="submit"
                   disabled={submittingWish}
-                  className="w-full bg-[#8B4F58] hover:bg-[#723E46] text-white rounded-xl h-11 transition-all flex items-center justify-center gap-2"
+                  className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-brand text-sm font-medium text-white transition hover:bg-brand-hover disabled:opacity-60"
                 >
-                  {submittingWish ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                  {submittingWish ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                   Send Wish
-                </Button>
+                </button>
               </form>
             </div>
 
-            {/* Wishes Grid Wall */}
-            <div className="lg:col-span-7 space-y-6">
-              <h3 className="text-lg font-semibold text-gray-700 flex items-center gap-2">
-                Live Feed <span className="text-xs font-normal bg-[#8B4F58]/10 text-[#8B4F58] px-2 py-0.5 rounded-full">{wishes.length} messages</span>
+            <div className="space-y-6 lg:col-span-7">
+              <h3 className="flex items-center gap-2 text-lg font-semibold text-foreground">
+                Live Feed
+                <span className="rounded-full bg-accent px-2 py-0.5 text-xs font-normal text-brand">
+                  {wishes.length} messages
+                </span>
               </h3>
 
               {wishesLoading ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {[1, 2, 3, 4].map(n => <div key={n} className="bg-white/40 h-32 rounded-2xl animate-pulse border border-gray-100" />)}
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  {[1, 2, 3, 4].map((n) => (
+                    <div key={n} className="h-32 animate-pulse rounded-2xl border border-border bg-card" />
+                  ))}
                 </div>
               ) : wishes.length > 0 ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-h-[560px] overflow-y-auto pr-2 custom-scrollbar">
+                <div className="custom-scrollbar grid max-h-[560px] grid-cols-1 gap-4 overflow-y-auto pr-2 sm:grid-cols-2">
                   {wishes.map((wish) => (
-                    <div key={wish.id} className="bg-white border border-[#8B4F58]/5 p-5 rounded-2xl shadow-sm space-y-3 hover:shadow-md transition-all relative group">
-                      
-                      {/* Edit / Delete Buttons for Wishes
-                          (always visible on touch; hover-reveal on desktop) */}
-                      <div className="absolute top-3 right-3 flex items-center gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
-                        {editingWishId !== wish.id ? (
+                    <div key={wish.id} className="group relative space-y-3 rounded-2xl border border-border bg-card p-5">
+                      <div className="absolute right-3 top-3 flex items-center gap-1 opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100">
+                        {editingWishId !== wish.id && (
                           <>
-                            <button 
-                              onClick={() => { setEditingWishId(wish.id); setEditText(wish.text); }}
-                              className="p-1.5 rounded-md text-gray-400 hover:text-[#8B4F58] hover:bg-gray-50 transition-colors"
-                              title="Edit Message"
+                            <button
+                              onClick={() => {
+                                setEditingWishId(wish.id);
+                                setEditText(wish.text);
+                              }}
+                              className="rounded-md p-1.5 text-muted-foreground transition hover:bg-muted hover:text-brand"
+                              title="Edit"
                             >
-                              <Pencil className="w-3.5 h-3.5" />
+                              <Pencil className="h-3.5 w-3.5" />
                             </button>
-                            <button 
+                            <button
                               onClick={() => handleDeleteWish(wish.id)}
-                              className="p-1.5 rounded-md text-gray-400 hover:text-red-600 hover:bg-gray-50 transition-colors"
-                              title="Delete Message"
+                              className="rounded-md p-1.5 text-muted-foreground transition hover:bg-muted hover:text-red-600"
+                              title="Delete"
                             >
-                              <Trash2 className="w-3.5 h-3.5" />
+                              <Trash2 className="h-3.5 w-3.5" />
                             </button>
                           </>
-                        ) : null}
+                        )}
                       </div>
 
                       <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-full bg-[#8B4F58]/5 flex items-center justify-center text-xs font-bold text-[#8B4F58] uppercase">
+                        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-accent text-xs font-bold uppercase text-brand">
                           {wish.name.charAt(0)}
                         </div>
                         <div>
-                          <h4 className="text-sm font-semibold text-gray-800">{wish.name}</h4>
-                          <p className="text-[10px] text-gray-400 font-medium">{wish.relation}</p>
+                          <h4 className="text-sm font-semibold text-foreground">{wish.name}</h4>
+                          <p className="text-[10px] font-medium text-muted-foreground">{wish.relation}</p>
                         </div>
                       </div>
 
-                      {/* Inline Wish Edit View */}
                       {editingWishId === wish.id ? (
                         <div className="space-y-2 pt-1">
-                          <Textarea 
+                          <Textarea
                             value={editText}
                             onChange={(e) => setEditText(e.target.value)}
-                            className="text-xs bg-white border-gray-200 focus-visible:ring-[#8B4F58] resize-none"
+                            className="resize-none rounded-lg text-xs"
                             rows={3}
                           />
-                          <div className="flex items-center gap-1.5 justify-end">
-                            <Button 
-                              size="sm" 
-                              variant="outline" 
+                          <div className="flex items-center justify-end gap-1.5">
+                            <button
                               onClick={() => setEditingWishId(null)}
-                              className="h-7 px-2.5 rounded-lg text-xs gap-1"
+                              className="flex h-7 items-center gap-1 rounded-lg border border-border px-2.5 text-xs text-foreground"
                             >
-                              <XCircle className="w-3 h-3" /> Cancel
-                            </Button>
-                            <Button 
-                              size="sm" 
+                              <XCircle className="h-3 w-3" /> Cancel
+                            </button>
+                            <button
                               disabled={updatingWish}
                               onClick={() => handleUpdateWish(wish.id)}
-                              className="h-7 px-2.5 rounded-lg bg-[#8B4F58] hover:bg-[#723E46] text-white text-xs gap-1"
+                              className="flex h-7 items-center gap-1 rounded-lg bg-brand px-2.5 text-xs text-white"
                             >
-                              {updatingWish ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />} Save
-                            </Button>
+                              {updatingWish ? <Loader2 className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />} Save
+                            </button>
                           </div>
                         </div>
                       ) : (
-                        <p className="text-xs text-gray-600 leading-relaxed">"{wish.text}"</p>
+                        <p className="text-xs leading-relaxed text-muted-foreground">&ldquo;{wish.text}&rdquo;</p>
                       )}
 
-                      {/* Heart reaction */}
                       <div className="flex items-center pt-1">
                         <motion.button
                           type="button"
                           onClick={() => handleLikeWish(wish.id)}
                           whileTap={{ scale: 0.8 }}
                           disabled={likedWishes.has(wish.id)}
-                          className={`flex items-center gap-1.5 text-xs font-medium rounded-full px-2.5 py-1 transition-colors ${
+                          className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium transition-colors ${
                             likedWishes.has(wish.id)
-                              ? "text-[#8B4F58] bg-[#8B4F58]/5"
-                              : "text-gray-400 hover:text-[#8B4F58] hover:bg-[#8B4F58]/5"
+                              ? "bg-accent text-brand"
+                              : "text-muted-foreground hover:bg-accent hover:text-brand"
                           }`}
                           aria-label="Like this wish"
                         >
-                          <Heart
-                            className={`w-3.5 h-3.5 transition-all ${
-                              likedWishes.has(wish.id) ? "fill-[#8B4F58]" : ""
-                            }`}
-                          />
+                          <Heart className={`h-3.5 w-3.5 transition-all ${likedWishes.has(wish.id) ? "fill-brand text-brand" : ""}`} />
                           <span>{wish.likes ?? 0}</span>
                         </motion.button>
                       </div>
@@ -476,117 +416,100 @@ export default function WishesAndVideosPage() {
                   ))}
                 </div>
               ) : (
-                <div className="flex flex-col items-center justify-center text-center p-12 border border-dashed border-[#8B4F58]/10 rounded-[24px] bg-white/20">
-                  <MessageSquareHeart className="w-8 h-8 text-[#8B4F58]/20 mb-2" />
-                  <h4 className="text-sm font-medium text-gray-600">No wishes yet</h4>
-                  <p className="text-xs text-gray-400 max-w-xs mt-0.5">Be the first to leave a permanent blessing message.</p>
+                <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-border bg-card/50 p-12 text-center">
+                  <MessageSquareHeart className="mb-2 h-8 w-8 text-brand/30" />
+                  <h4 className="text-sm font-medium text-foreground">No wishes yet</h4>
+                  <p className="mt-0.5 max-w-xs text-xs text-muted-foreground">Be the first to leave a blessing.</p>
                 </div>
               )}
             </div>
           </TabsContent>
 
-          {/* =========================================================================
-              TAB 2: VIDEO CLIPS
-              ========================================================================= */}
+          {/* VIDEOS */}
           <TabsContent value="videos" className="space-y-8 outline-none">
-            
-            {/* Upload Widget */}
-            <div className="max-w-xl mx-auto bg-white/60 border border-[#8B4F58]/10 rounded-[28px] p-6 text-center space-y-4">
+            <div className="mx-auto max-w-xl space-y-4 rounded-3xl border border-border bg-card p-6 text-center">
               <div className="space-y-1">
-                <h3 className="text-lg font-serif text-[#8B4F58] font-semibold">Upload a Video Greeting</h3>
-                <p className="text-xs text-gray-400">Record a short selfie video or clip (Max 50MB, MP4/WebM).</p>
+                <h3 className="font-serif text-lg font-semibold text-brand">Upload a Video Greeting</h3>
+                <p className="text-xs text-muted-foreground">A short selfie video or clip (max 50MB, MP4/WebM).</p>
               </div>
-
               <form onSubmit={handleVideoUpload} className="space-y-4">
-                <div className="border-2 border-dashed border-gray-200 rounded-2xl p-6 bg-white/50 hover:bg-white transition-all relative flex flex-col items-center justify-center gap-2 cursor-pointer group">
-                  <input 
-                    type="file" 
-                    accept="video/*" 
+                <div className="group relative flex cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-border bg-muted/30 p-6 transition hover:bg-muted/60">
+                  <input
+                    type="file"
+                    accept="video/*"
                     onChange={(e) => setVideoFile(e.target.files?.[0] || null)}
                     disabled={uploadingVideo}
-                    className="absolute inset-0 opacity-0 cursor-pointer"
+                    className="absolute inset-0 cursor-pointer opacity-0"
                   />
-                  <UploadCloud className="w-8 h-8 text-gray-400 group-hover:text-[#8B4F58] transition-colors" />
-                  <span className="text-xs font-medium text-gray-600">
+                  <UploadCloud className="h-8 w-8 text-muted-foreground transition group-hover:text-brand" />
+                  <span className="text-xs font-medium text-foreground">
                     {videoFile ? videoFile.name : "Click to browse or drop your video file"}
                   </span>
                 </div>
-
                 {uploadingVideo && (
-                  <div className="space-y-1.5 w-full">
-                    <div className="flex justify-between text-xs font-semibold text-gray-500">
-                      <span>Uploading your clip...</span>
-                    </div>
-                    <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
-                      <div className="bg-[#8B4F58] h-full w-full animate-pulse" />
+                  <div className="w-full space-y-1.5">
+                    <div className="text-xs font-semibold text-muted-foreground">Uploading your clip...</div>
+                    <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+                      <div className="h-full w-full animate-pulse bg-brand" />
                     </div>
                   </div>
                 )}
-
-                <Button 
-                  type="submit" 
+                <button
+                  type="submit"
                   disabled={!videoFile || uploadingVideo}
-                  className="bg-[#8B4F58] hover:bg-[#723E46] text-white rounded-xl px-6 h-10 shadow-sm w-full sm:w-auto transition-all"
+                  className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-brand px-6 text-sm font-medium text-white transition hover:bg-brand-hover disabled:opacity-50"
                 >
-                  {uploadingVideo ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Film className="w-4 h-4 mr-2" />}
+                  {uploadingVideo ? <Loader2 className="h-4 w-4 animate-spin" /> : <Film className="h-4 w-4" />}
                   Share Video Clip
-                </Button>
+                </button>
               </form>
             </div>
 
-            {/* Videos Grid Wall */}
             <div className="space-y-6">
-              <h3 className="text-lg font-semibold text-gray-700 flex items-center gap-2 justify-center md:justify-start">
-                Video Stream <span className="text-xs font-normal bg-[#8B4F58]/10 text-[#8B4F58] px-2 py-0.5 rounded-full">{videos.length} clips</span>
+              <h3 className="flex items-center justify-center gap-2 text-lg font-semibold text-foreground md:justify-start">
+                Video Stream
+                <span className="rounded-full bg-accent px-2 py-0.5 text-xs font-normal text-brand">{videos.length} clips</span>
               </h3>
-
               {videosLoading ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-                  {[1, 2, 3].map(n => <div key={n} className="bg-white/40 aspect-[4/3] rounded-2xl animate-pulse border border-gray-100" />)}
+                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">
+                  {[1, 2, 3].map((n) => (
+                    <div key={n} className="aspect-[4/3] animate-pulse rounded-2xl border border-border bg-card" />
+                  ))}
                 </div>
               ) : videos.length > 0 ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">
                   {videos.map((vid) => (
-                    <div key={vid.id} className="bg-white border border-[#8B4F58]/5 p-3 rounded-2xl shadow-sm space-y-2 group hover:shadow-md transition-all relative">
-                      
-                      {/* Delete Button for Videos
-                          (always visible on touch; hover-reveal on desktop) */}
-                      <div className="absolute top-5 right-5 z-10 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
-                        <button 
+                    <div key={vid.id} className="group relative space-y-2 rounded-2xl border border-border bg-card p-3">
+                      <div className="absolute right-5 top-5 z-10 opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100">
+                        <button
                           onClick={() => handleDeleteVideo(vid.id)}
-                          className="p-1.5 rounded-md bg-white/80 text-gray-500 hover:text-red-600 shadow-xs hover:bg-white transition-all"
+                          className="rounded-md bg-card/90 p-1.5 text-muted-foreground shadow-sm transition hover:text-red-600"
                           title="Delete Video"
                         >
-                          <Trash2 className="w-3.5 h-3.5" />
+                          <Trash2 className="h-3.5 w-3.5" />
                         </button>
                       </div>
-
-                      <div className="aspect-[4/3] rounded-xl overflow-hidden bg-black relative">
-                        <video
-                          src={vid.video_url}
-                          controls
-                          className="w-full h-full object-cover" 
-                          preload="metadata"
-                        />
+                      <div className="aspect-[4/3] overflow-hidden rounded-xl bg-black">
+                        <video src={vid.video_url} controls className="h-full w-full object-cover" preload="metadata" />
                       </div>
-                      <div className="px-1 flex items-center justify-between">
-                        <span className="text-xs font-semibold text-gray-700 truncate">From: {vid.name}</span>
-                        <span className="text-[10px] text-gray-400">Shared Live</span>
+                      <div className="flex items-center justify-between px-1">
+                        <span className="truncate text-xs font-semibold text-foreground">From: {vid.name}</span>
+                        <span className="text-[10px] text-muted-foreground">Shared Live</span>
                       </div>
                     </div>
                   ))}
                 </div>
               ) : (
-                <div className="flex flex-col items-center justify-center text-center p-16 border border-dashed border-[#8B4F58]/10 rounded-[32px] bg-white/20 max-w-md mx-auto">
-                  <Film className="w-8 h-8 text-[#8B4F58]/20 mb-2" />
-                  <h4 className="text-sm font-medium text-gray-600">No video clips shared yet</h4>
-                  <p className="text-xs text-gray-400 mt-0.5">Be the first to record and share a celebratory clip with everyone!</p>
+                <div className="mx-auto flex max-w-md flex-col items-center justify-center rounded-3xl border border-dashed border-border bg-card/50 p-16 text-center">
+                  <Film className="mb-2 h-8 w-8 text-brand/30" />
+                  <h4 className="text-sm font-medium text-foreground">No video clips shared yet</h4>
+                  <p className="mt-0.5 text-xs text-muted-foreground">Be the first to share a celebratory clip!</p>
                 </div>
               )}
             </div>
           </TabsContent>
         </Tabs>
-      </div>
+      </main>
     </>
   );
 }
