@@ -2,31 +2,47 @@
 
 import { useEffect, useState } from "react";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
-import { db } from "@/lib/firebase";
-import { collection, onSnapshot, deleteDoc, doc, query, orderBy } from "firebase/firestore";
+import { supabase } from "@/lib/supabase";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Trash2, Loader2, CheckCircle, Clock, Calendar } from "lucide-react";
 import { AdminSidebar } from "../_components/admin-sidebar";
+import type { Rsvp } from "@/lib/types";
 
 export default function GuestsAdminPage() {
   const { loading } = useAdminAuth();
-  const [guests, setGuests] = useState<any[]>([]);
+  const [guests, setGuests] = useState<Rsvp[]>([]);
 
   useEffect(() => {
     if (loading) return;
-    
-    // Query to fetch guests ordered by newest first
-    const q = query(collection(db, "rsvps"), orderBy("createdAt", "desc"));
-    
-    return onSnapshot(q, (snapshot) => {
-      setGuests(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-    });
+
+    // Fetch guests (newest first), then live-update on any change.
+    const load = async () => {
+      const { data } = await supabase
+        .from("rsvps")
+        .select("*")
+        .order("created_at", { ascending: false });
+      setGuests((data ?? []) as Rsvp[]);
+    };
+    load();
+
+    const channel = supabase
+      .channel("rsvps-changes")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "rsvps" },
+        load
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [loading]);
 
   const handleDelete = async (id: string) => {
     if (confirm("Are you sure you want to delete this guest?")) {
-      await deleteDoc(doc(db, "rsvps", id));
+      await supabase.from("rsvps").delete().eq("id", id);
     }
   };
 
@@ -58,8 +74,8 @@ export default function GuestsAdminPage() {
                   {guests.map((guest) => (
                     <tr key={guest.id} className="hover:bg-[#FFF0F5]/10 transition-colors">
                       <td className="p-5 pl-8 font-semibold text-gray-800">{guest.name}</td>
-                      <td className="p-5 font-mono text-xs text-gray-500">{guest.passId}</td>
-                      <td className="p-5 text-center font-medium">{guest.totalGuests || 1}</td>
+                      <td className="p-5 font-mono text-xs text-gray-500">{guest.pass_id}</td>
+                      <td className="p-5 text-center font-medium">{guest.total_guests || 1}</td>
                       <td className="p-5">
                         {guest.scanned ? (
                           <span className="inline-flex items-center gap-1 bg-green-50 text-green-700 px-3 py-1 rounded-full text-xs font-medium border border-green-100">
@@ -73,8 +89,8 @@ export default function GuestsAdminPage() {
                       </td>
                       <td className="p-5 text-gray-500 text-xs font-medium flex items-center gap-2">
                         <Calendar className="h-3 w-3" />
-                        {guest.createdAt?.toDate().toLocaleDateString("en-GB", { 
-                          day: "numeric", month: "short", year: "numeric" 
+                        {guest.created_at && new Date(guest.created_at).toLocaleDateString("en-GB", {
+                          day: "numeric", month: "short", year: "numeric"
                         })}
                       </td>
                       <td className="p-5 text-center">

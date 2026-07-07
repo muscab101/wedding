@@ -1,12 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { auth } from "@/lib/firebase"; 
-import { 
-  signInWithEmailAndPassword, 
-  signInWithPopup, 
-  GoogleAuthProvider 
-} from "firebase/auth";
+import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 
 // Shadcn UI Components
@@ -46,37 +41,33 @@ export default function LoginPage() {
     setError("");
     setLoading(true);
 
-    try {
-      const userCredential = await signInWithEmailAndPassword(auth, email.trim(), password);
-      handleUserRedirect(userCredential.user.email);
-    } catch (err: any) {
-      console.error(err);
-      if (
-        err.code === "auth/user-not-found" || 
-        err.code === "auth/wrong-password" || 
-        err.code === "auth/invalid-credential"
-      ) {
-        setError("Email-ka ama Password-ka aad gelisay ma saxan.");
-      } else {
-        setError("Xogta aad gelisay ma saxan ama akoonka wey jirin.");
-      }
-    } finally {
+    const { data, error: signInError } = await supabase.auth.signInWithPassword({
+      email: email.trim(),
+      password,
+    });
+
+    if (signInError) {
+      console.error(signInError);
+      setError("Email-ka ama Password-ka aad gelisay ma saxan.");
       setLoading(false);
+      return;
     }
+
+    handleUserRedirect(data.user?.email ?? null);
+    setLoading(false);
   };
 
-  // 2. Habka Google Account Login
+  // 2. Habka Google Account Login (redirects to Google, then back)
   const handleGoogleLogin = async () => {
     setError("");
     setLoading(true);
-    const provider = new GoogleAuthProvider();
-    try {
-      const userCredential = await signInWithPopup(auth, provider);
-      handleUserRedirect(userCredential.user.email);
-    } catch (err: any) {
-      console.error(err);
+    const { error: oauthError } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: `${window.location.origin}/dashboard` },
+    });
+    if (oauthError) {
+      console.error(oauthError);
       setError("Google Login waa uu fashilmay. Fadlan isku day markale.");
-    } finally {
       setLoading(false);
     }
   };

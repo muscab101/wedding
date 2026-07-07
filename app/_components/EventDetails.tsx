@@ -3,17 +3,9 @@
 import React, { useState, useEffect } from "react";
 import { Clock, Calendar, Heart, MessageSquare, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
-// Hubi in waddada 'db' ay sax tahay marka loo eego qaabayntaada (e.g., "@/lib/firebase")
-import { db } from "@/lib/firebase"; 
-import { collection, query, orderBy, limit, onSnapshot } from "firebase/firestore";
-
-interface Wish {
-  id: string;
-  name: string;
-  relation: string;
-  text: string;
-  createdAt?: any;
-}
+import { supabase } from "@/lib/supabase";
+import type { Wish } from "@/lib/types";
+import Reveal from "./Reveal";
 
 export default function EventDetails() {
   const [wishes, setWishes] = useState<Wish[]>([]);
@@ -40,26 +32,32 @@ export default function EventDetails() {
     return () => clearInterval(interval);
   }, []);
 
-  // 4. FETCH WISHES FROM FIREBASE FIRESTORE (Real-time updates)
+  // 4. FETCH LATEST WISHES FROM SUPABASE (with live updates)
   useEffect(() => {
-    // Waxay soo kaxaynaysaa qaybta fariimaha loo bixiyay 'wishes' iyadoo u habaynaysa taariikhda soo dhicitaanka
-    const wishesRef = collection(db, "wishes");
-    const q = query(wishesRef, orderBy("createdAt", "desc"), limit(4));
-
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const fetchedWishes = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as Wish[];
-      
-      setWishes(fetchedWishes);
+    const load = async () => {
+      const { data, error } = await supabase
+        .from("wishes")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(4);
+      if (error) console.error("Error fetching wishes:", error);
+      setWishes((data ?? []) as Wish[]);
       setLoading(false);
-    }, (error) => {
-      console.error("Error fetching wishes:", error);
-      setLoading(false);
-    });
+    };
+    load();
 
-    return () => unsubscribe();
+    const channel = supabase
+      .channel("wishes-preview-changes")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "wishes" },
+        load
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const timeline = [
@@ -87,6 +85,7 @@ export default function EventDetails() {
     <div className="w-full space-y-24 py-16 px-4 max-w-6xl mx-auto">
       
       {/* 2. COUNTDOWN TIMER SECTION */}
+      <Reveal>
       <section className="text-center space-y-8">
         <div className="space-y-2">
           <h2 className="text-3xl md:text-4xl font-serif text-[#8B4F58] tracking-tight">
@@ -118,8 +117,10 @@ export default function EventDetails() {
           ))}
         </div>
       </section>
+      </Reveal>
 
       {/* 3. EVENT TIMELINE SECTION */}
+      <Reveal>
       <section className="space-y-12">
         <div className="text-center space-y-2">
           <h2 className="text-3xl md:text-4xl font-serif text-[#8B4F58] tracking-tight">
@@ -163,8 +164,10 @@ export default function EventDetails() {
           </div>
         </div>
       </section>
+      </Reveal>
 
-      {/* 4. WISHES / GUESTBOOK PREVIEW SECTION WITH FIREBASE */}
+      {/* 4. WISHES / GUESTBOOK PREVIEW SECTION */}
+      <Reveal>
       <section className="space-y-8 bg-white/30 backdrop-blur-sm border border-[#8B4F58]/5 rounded-[32px] p-8 md:p-12 shadow-xs">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div className="space-y-2 text-center md:text-left">
@@ -225,6 +228,7 @@ export default function EventDetails() {
           </div>
         )}
       </section>
+      </Reveal>
 
     </div>
   );

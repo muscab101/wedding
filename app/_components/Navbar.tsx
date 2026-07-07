@@ -1,13 +1,13 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { auth } from "@/lib/firebase";
-import { onAuthStateChanged, signOut } from "firebase/auth";
+import { supabase } from "@/lib/supabase";
+import type { User } from "@supabase/supabase-js";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 
 // Lucide Icons
-import { Heart, Home, QrCode, MapPin, MessageSquareHeart, LogOut, LayoutDashboard } from "lucide-react";
+import { Heart, Home, QrCode, MapPin, MessageSquareHeart, LogOut, LayoutDashboard, Camera } from "lucide-react";
 
 // Shadcn UI Components
 import { Button } from "@/components/ui/button";
@@ -22,22 +22,30 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 export default function Navbar() {
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
   const pathname = usePathname();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
+    supabase.auth.getSession().then(({ data }) => {
+      setUser(data.session?.user ?? null);
       setLoading(false);
     });
-    return () => unsubscribe();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+      setLoading(false);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   const handleLogout = async () => {
     try {
-      await signOut(auth);
+      await supabase.auth.signOut();
       router.push("/singin");
     } catch (err) {
       console.error("Logout error:", err);
@@ -49,6 +57,7 @@ export default function Navbar() {
     { name: "Home", href: "/dashboard", icon: Home },
     { name: "RSVP & Pass", href: "/rsvp", icon: QrCode },
     { name: "Venue / Location", href: "/venue", icon: MapPin },
+    { name: "Gallery", href: "/gallery", icon: Camera },
     { name: "Wishes & Videos", href: "/wishes", icon: MessageSquareHeart },
   ];
 

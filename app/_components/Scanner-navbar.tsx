@@ -1,8 +1,7 @@
 "use client";
 
 import React from "react";
-import { auth } from "@/lib/firebase";
-import { signOut } from "firebase/auth";
+import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { LogOut, ScanLine } from "lucide-react"; // Hubi inaad haysato lucide-react (wuxuu la yimaadaa Shadcn)
@@ -11,7 +10,7 @@ export function ScannerNavbar({ userEmail }: { userEmail: string }) {
   const router = useRouter();
 
   const handleLogout = async () => {
-    await signOut(auth);
+    await supabase.auth.signOut();
     router.push("/login");
   };
 

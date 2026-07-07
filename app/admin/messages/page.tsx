@@ -3,31 +3,47 @@
 import { useEffect, useState } from "react";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 
-import { db } from "@/lib/firebase";
-import { collection, onSnapshot, deleteDoc, doc, query, orderBy } from "firebase/firestore";
+import { supabase } from "@/lib/supabase";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Trash2, Loader2, MessageSquareText, Calendar } from "lucide-react";
 import { AdminSidebar } from "../_components/admin-sidebar";
+import type { Wish } from "@/lib/types";
 
 export default function MessagesAdminPage() {
   const { loading } = useAdminAuth();
-  const [messages, setMessages] = useState<any[]>([]);
+  const [messages, setMessages] = useState<Wish[]>([]);
 
   useEffect(() => {
     if (loading) return;
-    
-    // Fetching messages ordered by newest first
-    const q = query(collection(db, "messages"), orderBy("createdAt", "desc"));
-    
-    return onSnapshot(q, (snapshot) => {
-      setMessages(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-    });
+
+    // Guests submit blessings to the `wishes` table (see /wishes).
+    const load = async () => {
+      const { data } = await supabase
+        .from("wishes")
+        .select("*")
+        .order("created_at", { ascending: false });
+      setMessages((data ?? []) as Wish[]);
+    };
+    load();
+
+    const channel = supabase
+      .channel("wishes-admin-changes")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "wishes" },
+        load
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [loading]);
 
   const handleDelete = async (id: string) => {
     if (confirm("Are you sure you want to permanently delete this message?")) {
-      await deleteDoc(doc(db, "messages", id));
+      await supabase.from("wishes").delete().eq("id", id);
     }
   };
 
@@ -49,15 +65,20 @@ export default function MessagesAdminPage() {
                 <div className="space-y-3">
                   <div className="flex items-center gap-2 text-[#8B4F58]">
                     <MessageSquareText className="h-4 w-4" />
-                    <span className="font-bold text-sm uppercase tracking-wide">{msg.senderName || "Anonymous Guest"}</span>
+                    <span className="font-bold text-sm uppercase tracking-wide">{msg.name || "Anonymous Guest"}</span>
+                    {msg.relation && (
+                      <span className="text-xs font-normal text-gray-400 normal-case">
+                        · {msg.relation}
+                      </span>
+                    )}
                   </div>
                   <p className="text-gray-700 leading-relaxed text-sm italic">"{msg.text}"</p>
                   
-                  {msg.createdAt && (
+                  {msg.created_at && (
                     <div className="flex items-center gap-1 text-xs text-gray-400">
                       <Calendar className="h-3 w-3" />
-                      {msg.createdAt?.toDate().toLocaleDateString("en-GB", { 
-                        day: "numeric", month: "short", year: "numeric" 
+                      {new Date(msg.created_at).toLocaleDateString("en-GB", {
+                        day: "numeric", month: "short", year: "numeric"
                       })}
                     </div>
                   )}

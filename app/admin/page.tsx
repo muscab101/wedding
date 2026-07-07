@@ -2,8 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
-import { db } from "@/lib/firebase";
-import { collection, onSnapshot, getDocs } from "firebase/firestore";
+import { supabase } from "@/lib/supabase";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, CheckCircle2, MessageSquare, Video, Loader2 } from "lucide-react";
@@ -21,17 +20,26 @@ export default function AdminDashboard() {
   useEffect(() => {
     if (loading) return;
 
-    // Waxaan ka soo qaadeynaa xogta collections-ka
+    // Count each table with head-only count queries (no rows transferred).
     const fetchData = async () => {
-      const guestsSnap = await getDocs(collection(db, "rsvps"));
-      const messagesSnap = await getDocs(collection(db, "messages"));
-      const videosSnap = await getDocs(collection(db, "videos"));
+      const countOf = (table: string) =>
+        supabase.from(table).select("*", { count: "exact", head: true });
+
+      const [guests, scanned, messages, videos] = await Promise.all([
+        countOf("rsvps"),
+        supabase
+          .from("rsvps")
+          .select("*", { count: "exact", head: true })
+          .eq("scanned", true),
+        countOf("wishes"),
+        countOf("videos"),
+      ]);
 
       setStats({
-        guests: guestsSnap.size,
-        scanned: guestsSnap.docs.filter((d) => d.data().scanned).length,
-        messages: messagesSnap.size,
-        videos: videosSnap.size,
+        guests: guests.count ?? 0,
+        scanned: scanned.count ?? 0,
+        messages: messages.count ?? 0,
+        videos: videos.count ?? 0,
       });
     };
 

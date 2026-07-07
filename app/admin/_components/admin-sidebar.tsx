@@ -3,8 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { auth } from "@/lib/firebase";
-import { signOut } from "firebase/auth";
+import { supabase } from "@/lib/supabase";
 import { 
   LayoutDashboard, 
   Users, 
@@ -27,7 +26,7 @@ export function AdminSidebar() {
   ];
 
   const handleLogout = async () => {
-    await signOut(auth);
+    await supabase.auth.signOut();
     router.push("/login");
   };
 

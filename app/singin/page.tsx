@@ -1,12 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { auth } from "@/lib/firebase"; 
-import { 
-  createUserWithEmailAndPassword, 
-  signInWithPopup, 
-  GoogleAuthProvider 
-} from "firebase/auth";
+import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 
 // Shadcn UI Components
@@ -42,36 +37,39 @@ export default function RegisterPage() {
 
     setLoading(true);
 
-    try {
-      // Ku dhalinta akoon cusub Firebase Auth
-      await createUserWithEmailAndPassword(auth, email, password);
-      router.push("/dashboard"); 
-    } catch (err: any) {
-      console.error(err);
-      if (err.code === "auth/email-already-in-use") {
+    const { error: signUpError } = await supabase.auth.signUp({
+      email: email.trim(),
+      password,
+    });
+
+    if (signUpError) {
+      console.error(signUpError);
+      if (signUpError.message.toLowerCase().includes("already")) {
         setError("Email-kan hadda ka hor ayaa la isticmaalay.");
-      } else if (err.code === "auth/invalid-email") {
+      } else if (signUpError.message.toLowerCase().includes("valid")) {
         setError("Qaabka Email-ka aad u qortay ma saxan.");
       } else {
         setError("Waxaa dhacay khaldan inta ay diiwaangelintu socotay.");
       }
-    } finally {
       setLoading(false);
+      return;
     }
+
+    router.push("/dashboard");
+    setLoading(false);
   };
 
-  // 2. Ku gelidda Google Account
+  // 2. Ku gelidda Google Account (redirects to Google, then back)
   const handleGoogleLogin = async () => {
     setError("");
     setLoading(true);
-    const provider = new GoogleAuthProvider();
-    try {
-      await signInWithPopup(auth, provider);
-      router.push("/dashboard");
-    } catch (err: any) {
-      console.error(err);
+    const { error: oauthError } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: `${window.location.origin}/dashboard` },
+    });
+    if (oauthError) {
+      console.error(oauthError);
       setError("Google Login waa uu fashilmay.");
-    } finally {
       setLoading(false);
     }
   };

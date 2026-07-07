@@ -1,25 +1,16 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { db, storage, auth } from "@/lib/firebase";
-import { 
-  collection, 
-  addDoc, 
-  query, 
-  orderBy, 
-  onSnapshot, 
-  serverTimestamp, 
-  doc, 
-  updateDoc, 
-  deleteDoc 
-} from "firebase/firestore";
-import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
-import { onAuthStateChanged } from "firebase/auth";
+import { supabase } from "@/lib/supabase";
+import { motion } from "framer-motion";
+import type { User } from "@supabase/supabase-js";
+import type { Wish, VideoItem } from "@/lib/types";
 
 // Lucide Icons
 import { 
-  MessageSquareHeart, 
-  Video, 
+  MessageSquareHeart,
+  Heart,
+  Video,
   Sparkles, 
   Send, 
   UploadCloud, 
@@ -41,21 +32,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Navbar from "../_components/Navbar";
 
-interface Wish {
-  id: string;
-  name: string;
-  relation: string;
-  text: string;
-  createdAt?: any;
-}
-
-interface VideoItem {
-  id: string;
-  name: string;
-  videoUrl: string;
-  createdAt?: any;
-}
-
 interface CustomToast {
   title: string;
   description: string;
@@ -64,7 +40,7 @@ interface CustomToast {
 
 export default function WishesAndVideosPage() {
   const [activeTab, setActiveTab] = useState("wishes");
-  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
 
   // Custom Inline Toast State
   const [toastNotification, setToastNotification] = useState<CustomToast | null>(null);
@@ -86,7 +62,6 @@ export default function WishesAndVideosPage() {
   const [formData, setFormData] = useState({ name: "", relation: "", text: "" });
   const [submittingWish, setSubmittingWish] = useState(false);
   const [videoFile, setVideoFile] = useState<File | null>(null);
-  const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadingVideo, setUploadingVideo] = useState(false);
 
   // Edit State for Wishes
@@ -94,32 +69,68 @@ export default function WishesAndVideosPage() {
   const [editText, setEditText] = useState<string>("");
   const [updatingWish, setUpdatingWish] = useState<boolean>(false);
 
+  // Wishes this device has already liked (persisted so a like sticks & can't repeat).
+  const [likedWishes, setLikedWishes] = useState<Set<string>>(new Set());
+  useEffect(() => {
+    const saved = localStorage.getItem("liked_wishes");
+    if (saved) setLikedWishes(new Set(JSON.parse(saved)));
+  }, []);
+
   // Monitor Auth State
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setCurrentUser(user);
-    });
-    return () => unsubscribe();
+    supabase.auth.getSession().then(({ data }) =>
+      setCurrentUser(data.session?.user ?? null)
+    );
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) =>
+      setCurrentUser(session?.user ?? null)
+    );
+    return () => subscription.unsubscribe();
   }, []);
 
-  // Fetch Wishes (Real-time)
+  // Fetch Wishes (with live updates)
   useEffect(() => {
-    const q = query(collection(db, "wishes"), orderBy("createdAt", "desc"));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      setWishes(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Wish[]);
+    const load = async () => {
+      const { data } = await supabase
+        .from("wishes")
+        .select("*")
+        .order("created_at", { ascending: false });
+      setWishes((data ?? []) as Wish[]);
       setWishesLoading(false);
-    });
-    return () => unsubscribe();
+    };
+    load();
+
+    const channel = supabase
+      .channel("wishes-feed-changes")
+      .on("postgres_changes", { event: "*", schema: "public", table: "wishes" }, load)
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
-  // Fetch Videos (Real-time)
+  // Fetch Videos (with live updates)
   useEffect(() => {
-    const q = query(collection(db, "videos"), orderBy("createdAt", "desc"));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      setVideos(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as VideoItem[]);
+    const load = async () => {
+      const { data } = await supabase
+        .from("videos")
+        .select("*")
+        .order("created_at", { ascending: false });
+      setVideos((data ?? []) as VideoItem[]);
       setVideosLoading(false);
-    });
-    return () => unsubscribe();
+    };
+    load();
+
+    const channel = supabase
+      .channel("videos-feed-changes")
+      .on("postgres_changes", { event: "*", schema: "public", table: "videos" }, load)
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   // Handle Wish Submission
@@ -132,12 +143,12 @@ export default function WishesAndVideosPage() {
 
     setSubmittingWish(true);
     try {
-      await addDoc(collection(db, "wishes"), {
+      const { error } = await supabase.from("wishes").insert({
         name: formData.name,
         relation: formData.relation || "Guest",
         text: formData.text,
-        createdAt: serverTimestamp(),
       });
+      if (error) throw error;
       setFormData({ name: "", relation: "", text: "" });
       showToast({ title: "Success!", description: "Your beautiful wish has been sent." });
     } catch (err) {
@@ -156,8 +167,8 @@ export default function WishesAndVideosPage() {
     }
     setUpdatingWish(true);
     try {
-      const wishDocRef = doc(db, "wishes", id);
-      await updateDoc(wishDocRef, { text: editText });
+      const { error } = await supabase.from("wishes").update({ text: editText }).eq("id", id);
+      if (error) throw error;
       setEditingWishId(null);
       showToast({ title: "Updated!", description: "Wish message updated successfully." });
     } catch (err) {
@@ -168,11 +179,38 @@ export default function WishesAndVideosPage() {
     }
   };
 
+  // Like a wish — optimistic bump + atomic DB increment. One like per wish per
+  // device (tracked in localStorage) so a guest can't spam the count.
+  const handleLikeWish = async (id: string) => {
+    if (likedWishes.has(id)) return;
+
+    const nextLiked = new Set(likedWishes).add(id);
+    setLikedWishes(nextLiked);
+    localStorage.setItem("liked_wishes", JSON.stringify([...nextLiked]));
+    setWishes((prev) =>
+      prev.map((w) => (w.id === id ? { ...w, likes: (w.likes ?? 0) + 1 } : w))
+    );
+
+    const { error } = await supabase.rpc("increment_wish_likes", { wish_id: id });
+    if (error) {
+      console.error("Failed to like wish:", error);
+      // Roll back on failure.
+      const reverted = new Set(nextLiked);
+      reverted.delete(id);
+      setLikedWishes(reverted);
+      localStorage.setItem("liked_wishes", JSON.stringify([...reverted]));
+      setWishes((prev) =>
+        prev.map((w) => (w.id === id ? { ...w, likes: Math.max(0, (w.likes ?? 1) - 1) } : w))
+      );
+    }
+  };
+
   // Delete Wish Function
   const handleDeleteWish = async (id: string) => {
     if (!window.confirm("Ma hubtaa inaad tirto fariintan?")) return;
     try {
-      await deleteDoc(doc(db, "wishes", id));
+      const { error } = await supabase.from("wishes").delete().eq("id", id);
+      if (error) throw error;
       showToast({ title: "Deleted", description: "Wish has been removed." });
     } catch (err) {
       console.error(err);
@@ -184,7 +222,8 @@ export default function WishesAndVideosPage() {
   const handleDeleteVideo = async (id: string) => {
     if (!window.confirm("Ma hubtaa inaad tirto muuqaalkan?")) return;
     try {
-      await deleteDoc(doc(db, "videos", id));
+      const { error } = await supabase.from("videos").delete().eq("id", id);
+      if (error) throw error;
       showToast({ title: "Deleted", description: "Video clip has been removed." });
     } catch (err) {
       console.error(err);
@@ -192,39 +231,37 @@ export default function WishesAndVideosPage() {
     }
   };
 
-  // Handle Video Upload
+  // Handle Video Upload (Supabase Storage -> public URL -> videos table)
   const handleVideoUpload = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!videoFile) return;
 
     setUploadingVideo(true);
-    const storageRef = ref(storage, `wedding_videos/${Date.now()}_${videoFile.name}`);
-    const uploadTask = uploadBytesResumable(storageRef, videoFile);
+    try {
+      const filePath = `${Date.now()}_${videoFile.name.replace(/\s+/g, "_")}`;
+      const { error: uploadError } = await supabase.storage
+        .from("wedding-videos")
+        .upload(filePath, videoFile, { contentType: videoFile.type });
+      if (uploadError) throw uploadError;
 
-    uploadTask.on(
-      "state_changed",
-      (snapshot) => {
-        const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-        setUploadProgress(Math.round(progress));
-      },
-      (error) => {
-        console.error(error);
-        showToast({ title: "Upload Failed", description: "Something went wrong during video upload.", variant: "destructive" });
-        setUploadingVideo(false);
-      },
-      async () => {
-        const downloadUrl = await getDownloadURL(uploadTask.snapshot.ref);
-        await addDoc(collection(db, "videos"), {
-          name: currentUser?.email?.split("@")[0] || "Anonymous Guest",
-          videoUrl: downloadUrl,
-          createdAt: serverTimestamp(),
-        });
-        setVideoFile(null);
-        setUploadProgress(0);
-        setUploadingVideo(false);
-        showToast({ title: "Video Shared!", description: "Your video clip is now live on the wall." });
-      }
-    );
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from("wedding-videos").getPublicUrl(filePath);
+
+      const { error: insertError } = await supabase.from("videos").insert({
+        name: currentUser?.email?.split("@")[0] || "Anonymous Guest",
+        video_url: publicUrl,
+      });
+      if (insertError) throw insertError;
+
+      setVideoFile(null);
+      showToast({ title: "Video Shared!", description: "Your video clip is now live on the wall." });
+    } catch (error) {
+      console.error(error);
+      showToast({ title: "Upload Failed", description: "Something went wrong during video upload.", variant: "destructive" });
+    } finally {
+      setUploadingVideo(false);
+    }
   };
 
   return (
@@ -348,8 +385,9 @@ export default function WishesAndVideosPage() {
                   {wishes.map((wish) => (
                     <div key={wish.id} className="bg-white border border-[#8B4F58]/5 p-5 rounded-2xl shadow-sm space-y-3 hover:shadow-md transition-all relative group">
                       
-                      {/* Edit / Delete Buttons for Wishes */}
-                      <div className="absolute top-3 right-3 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      {/* Edit / Delete Buttons for Wishes
+                          (always visible on touch; hover-reveal on desktop) */}
+                      <div className="absolute top-3 right-3 flex items-center gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                         {editingWishId !== wish.id ? (
                           <>
                             <button 
@@ -411,6 +449,29 @@ export default function WishesAndVideosPage() {
                       ) : (
                         <p className="text-xs text-gray-600 leading-relaxed">"{wish.text}"</p>
                       )}
+
+                      {/* Heart reaction */}
+                      <div className="flex items-center pt-1">
+                        <motion.button
+                          type="button"
+                          onClick={() => handleLikeWish(wish.id)}
+                          whileTap={{ scale: 0.8 }}
+                          disabled={likedWishes.has(wish.id)}
+                          className={`flex items-center gap-1.5 text-xs font-medium rounded-full px-2.5 py-1 transition-colors ${
+                            likedWishes.has(wish.id)
+                              ? "text-[#8B4F58] bg-[#8B4F58]/5"
+                              : "text-gray-400 hover:text-[#8B4F58] hover:bg-[#8B4F58]/5"
+                          }`}
+                          aria-label="Like this wish"
+                        >
+                          <Heart
+                            className={`w-3.5 h-3.5 transition-all ${
+                              likedWishes.has(wish.id) ? "fill-[#8B4F58]" : ""
+                            }`}
+                          />
+                          <span>{wish.likes ?? 0}</span>
+                        </motion.button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -454,11 +515,10 @@ export default function WishesAndVideosPage() {
                 {uploadingVideo && (
                   <div className="space-y-1.5 w-full">
                     <div className="flex justify-between text-xs font-semibold text-gray-500">
-                      <span>Uploading...</span>
-                      <span>{uploadProgress}%</span>
+                      <span>Uploading your clip...</span>
                     </div>
                     <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
-                      <div className="bg-[#8B4F58] h-full transition-all duration-300" style={{ width: `${uploadProgress}%` }} />
+                      <div className="bg-[#8B4F58] h-full w-full animate-pulse" />
                     </div>
                   </div>
                 )}
@@ -489,8 +549,9 @@ export default function WishesAndVideosPage() {
                   {videos.map((vid) => (
                     <div key={vid.id} className="bg-white border border-[#8B4F58]/5 p-3 rounded-2xl shadow-sm space-y-2 group hover:shadow-md transition-all relative">
                       
-                      {/* Delete Button for Videos */}
-                      <div className="absolute top-5 right-5 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+                      {/* Delete Button for Videos
+                          (always visible on touch; hover-reveal on desktop) */}
+                      <div className="absolute top-5 right-5 z-10 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                         <button 
                           onClick={() => handleDeleteVideo(vid.id)}
                           className="p-1.5 rounded-md bg-white/80 text-gray-500 hover:text-red-600 shadow-xs hover:bg-white transition-all"
@@ -501,9 +562,9 @@ export default function WishesAndVideosPage() {
                       </div>
 
                       <div className="aspect-[4/3] rounded-xl overflow-hidden bg-black relative">
-                        <video 
-                          src={vid.videoUrl} 
-                          controls 
+                        <video
+                          src={vid.video_url}
+                          controls
                           className="w-full h-full object-cover" 
                           preload="metadata"
                         />

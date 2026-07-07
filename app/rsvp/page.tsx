@@ -1,8 +1,11 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { db } from "@/lib/firebase";
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import React, { useState, useEffect, useRef } from "react";
+import { QRCodeSVG } from "qrcode.react";
+import { domToPng } from "modern-screenshot";
+import { supabase } from "@/lib/supabase";
+import { generatePassId, rsvpInputSchema } from "@/lib/schemas";
+import type { RsvpPass } from "@/lib/types";
 import { 
   CheckCircle, 
   User, 
@@ -25,13 +28,17 @@ import {
   SelectValue 
 } from "@/components/ui/select";
 import Navbar from "../_components/Navbar";
+import Celebration from "../_components/Celebration";
 
 export default function RsvpAndPassPage() {
   const [name, setName] = useState("");
   const [guests, setGuests] = useState("1");
   const [status, setStatus] = useState("attending");
   const [loading, setLoading] = useState(false);
-  const [generatedPass, setGeneratedPass] = useState<any>(null);
+  const [generatedPass, setGeneratedPass] = useState<RsvpPass | null>(null);
+  const [savingPass, setSavingPass] = useState(false);
+  const [celebrate, setCelebrate] = useState(false);
+  const passRef = useRef<HTMLDivElement>(null);
 
   // 1. Marka uu boggu kaco, hubi haddii uu Pass horey ugu keydsanaa localStorage
   useEffect(() => {
@@ -43,31 +50,45 @@ export default function RsvpAndPassPage() {
 
   const handleRsvpSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) return;
+
+    // Validate input before touching Firestore.
+    const parsed = rsvpInputSchema.safeParse({
+      name,
+      totalGuests: parseInt(guests),
+      status,
+    });
+    if (!parsed.success) {
+      alert(parsed.error.issues[0]?.message ?? "Please check the form.");
+      return;
+    }
 
     setLoading(true);
     try {
-      const passId = "WD-" + Math.floor(100000 + Math.random() * 900000); 
-      
-      const rsvpData = {
-        name: name.trim(),
-        totalGuests: parseInt(guests),
-        status: status,
-        passId: passId,
+      // Collision-safe, human-readable pass ID (also enforced UNIQUE in the DB).
+      const passId = generatePassId();
+
+      const rsvpData: RsvpPass = {
+        name: parsed.data.name,
+        totalGuests: parsed.data.totalGuests,
+        status: parsed.data.status,
+        passId,
       };
 
-      // U keydi Firestore iyadoo la raacinayo xaqiijinta albaabka (QR scanning fields)
-      await addDoc(collection(db, "rsvps"), {
-        ...rsvpData,
-        scanned: false,       // Waxaa loo isticmaali doonaa xaqiijinta albaabka
-        scannedAt: null,      // Markuu albaabka yimaado ayaa la buuxin doonaa
-        createdAt: serverTimestamp(),
+      const { error: insertError } = await supabase.from("rsvps").insert({
+        name: rsvpData.name,
+        total_guests: rsvpData.totalGuests,
+        status: rsvpData.status,
+        pass_id: passId,
+        scanned: false, // set true by the gate scanner
+        scanned_at: null, // filled in at check-in
       });
 
-      if (status === "attending") {
-        // 2. Ku keydi localStorage si uusan marnaba uga bixin website-ka
+      if (insertError) throw insertError;
+
+      if (parsed.data.status === "attending") {
         localStorage.setItem("wedding_pass", JSON.stringify(rsvpData));
         setGeneratedPass(rsvpData);
+        setCelebrate(true);
       } else {
         alert("Thank you for your response!");
         setName("");
@@ -80,23 +101,33 @@ export default function RsvpAndPassPage() {
     }
   };
 
-  // Dynamic QR Code API (Wuxuu dhaliyaa QR Code dhab ah oo ka tarjumaya Pass ID-ga)
-  const qrCodeUrl = generatedPass 
-    ? `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${generatedPass.passId}`
-    : "";
-
-  // Functions loo diyaariyay Wallet Integration (Halkaan waxaad ku xiri kartaa API-gaaga dambe)
-  const handleAddToAppleWallet = () => {
-    alert(`Generating Apple Wallet Pass (.pkpass) for ${generatedPass?.name}...`);
-  };
-
-  const handleAddToGoogleWallet = () => {
-    alert("Redirecting to Google Wallet Save URL...");
+  // Save the pass as a high-resolution PNG the guest can keep in their phone's
+  // Photos. Works on every device with no developer accounts. (Native Apple/
+  // Google Wallet passes require signing certificates — a future backend step.)
+  const handleSavePass = async () => {
+    if (!passRef.current) return;
+    setSavingPass(true);
+    try {
+      const dataUrl = await domToPng(passRef.current, {
+        scale: 3, // sharp on retina / high-DPI phone screens
+        backgroundColor: "#ffffff",
+      });
+      const link = document.createElement("a");
+      link.download = `wedding-pass-${generatedPass?.passId ?? "entry"}.png`;
+      link.href = dataUrl;
+      link.click();
+    } catch (error) {
+      console.error("Failed to save pass:", error);
+      alert("Could not save the pass image. Please try the Print option instead.");
+    } finally {
+      setSavingPass(false);
+    }
   };
 
   return (
     <>
       <Navbar />
+      <Celebration show={celebrate} onDone={() => setCelebrate(false)} />
       <div className="w-full min-h-screen bg-white py-12 px-4 max-w-4xl mx-auto space-y-10 selection:bg-[#8B4F58]/10">
         
         {/* Header */}
@@ -183,7 +214,7 @@ export default function RsvpAndPassPage() {
                   <label className="text-xs font-semibold text-gray-500 tracking-wide">
                     Will You Attend?
                   </label>
-                  <Select value={status} onValueChange={setStatus} disabled={loading}>
+                  <Select value={status} onValueChange={(v) => v && setStatus(v)} disabled={loading}>
                     <SelectTrigger className="rounded-xl border-gray-200 h-12 text-sm font-medium px-4 focus:ring-[#8B4F58] bg-white transition-all text-gray-700">
                       <SelectValue />
                     </SelectTrigger>
@@ -249,7 +280,7 @@ export default function RsvpAndPassPage() {
             {generatedPass ? (
               <div className="w-full max-w-sm space-y-4">
                 {/* Ticket Card */}
-                <div className="w-full bg-white border border-gray-100 rounded-[32px] overflow-hidden shadow-xs relative">
+                <div ref={passRef} className="w-full bg-white border border-gray-100 rounded-[32px] overflow-hidden shadow-xs relative">
                   
                   {/* Top Section */}
                   <div className="bg-[#8B4F58] p-6 text-white text-center space-y-2 relative">
@@ -290,10 +321,11 @@ export default function RsvpAndPassPage() {
                     {/* REAL DYNAMIC QR CODE */}
                     <div className="flex flex-col items-center justify-center pt-2 space-y-2">
                       <div className="p-2 bg-white border border-gray-100 rounded-2xl inline-flex items-center justify-center">
-                        <img 
-                          src={qrCodeUrl} 
-                          alt="Wedding Pass QR Code" 
-                          className="w-28 h-28 object-contain"
+                        <QRCodeSVG
+                          value={generatedPass.passId}
+                          size={112}
+                          level="M"
+                          className="w-28 h-28"
                         />
                       </div>
                       <p className="text-[10px] text-gray-400 max-w-[200px]">Please present this digital pass at the entrance gate.</p>
@@ -312,31 +344,24 @@ export default function RsvpAndPassPage() {
                   </div>
                 </div>
 
-                {/* WALLET BUTTONS CONTAINER */}
-                <div className="grid grid-cols-2 gap-3 w-full px-1">
-                  {/* Apple Wallet Button */}
-                  <Button
-                    type="button"
-                    onClick={handleAddToAppleWallet}
-                    className="bg-black hover:bg-neutral-900 text-white rounded-xl h-11 font-sans text-xs font-medium flex items-center justify-center gap-2 border border-neutral-800 shadow-xs transition-all"
-                  >
+                {/* SAVE PASS TO PHONE (downloads the ticket as an image) */}
+                <Button
+                  type="button"
+                  onClick={handleSavePass}
+                  disabled={savingPass}
+                  className="w-full bg-black hover:bg-neutral-900 text-white rounded-xl h-11 font-sans text-sm font-medium flex items-center justify-center gap-2 border border-neutral-800 shadow-xs transition-all"
+                >
+                  {savingPass ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
                     <Wallet className="w-4 h-4 text-white" />
-                    <span>Add to Apple Wallet</span>
-                  </Button>
-
-                  {/* Google Wallet Button */}
-                  <Button
-                    type="button"
-                    onClick={handleAddToGoogleWallet}
-                    variant="outline"
-                    className="bg-white hover:bg-neutral-50 text-neutral-800 border-neutral-200 rounded-xl h-11 font-sans text-xs font-medium flex items-center justify-center gap-2 shadow-xs transition-all"
-                  >
-                    <svg className="w-4 h-4 text-[#4285F4]" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M21 7.28V5c0-1.1-.9-2-2-2H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-2.28c.59-.36 1-.1 1-.72V8c0-.62-.41-.36-1-.72zM5 5h14v1.2c-.59.36-1 .97-1 1.68V11H5V5zm14 14H5v-6h13v2.12c0 .71.41 1.32 1 1.68V19zm1-6.5c-.28 0-.5-.22-.5-.5s.22-.5.5-.5.5.22.5.5-.22.5-.5.5z"/>
-                    </svg>
-                    <span>Google Wallet</span>
-                  </Button>
-                </div>
+                  )}
+                  <span>Save Pass to Phone</span>
+                </Button>
+                <p className="text-[10px] text-gray-400 text-center px-2">
+                  Downloads your pass as an image you can keep in your Photos and
+                  show at the gate.
+                </p>
               </div>
             ) : (
               <div className="w-full max-w-sm aspect-[4/5] border-2 border-dashed border-gray-100 rounded-[32px] flex flex-col items-center justify-center text-center p-8 bg-white text-gray-400">
