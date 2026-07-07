@@ -92,6 +92,7 @@ export default function VenuePage() {
               
               <div className="pt-3">
                 <Button
+                  nativeButton={false}
                   render={<a href={googleMapsExternalUrl} target="_blank" rel="noopener noreferrer" />}
                   className="w-full bg-[#8B4F58] hover:bg-[#723E46] text-white rounded-xl h-10 text-xs font-medium gap-1.5 transition-all shadow-xs"
                 >
