@@ -17,6 +17,7 @@
     "date-fns": "^4.4.0",
     "framer-motion": "^12.42.2",
     "html5-qrcode": "^2.3.8",
+    "jsonwebtoken": "^9.0.3",
     "lucide-react": "^1.23.0",
     "modern-screenshot": "^4.7.0",
     "next": "16.2.10",
@@ -33,6 +34,7 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",

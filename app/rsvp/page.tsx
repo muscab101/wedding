@@ -32,6 +32,7 @@ import {
 import Navbar from "../_components/Navbar";
 import Celebration from "../_components/Celebration";
 import { AddToCalendar } from "../_components/AddToCalendar";
+import { AddToGoogleWallet } from "../_components/AddToGoogleWallet";
 
 // RSVP closes this many days before the ceremony.
 const WEDDING_DATE = new Date("September 11, 2026 18:00:00");
@@ -452,6 +453,12 @@ export default function RsvpAndPassPage() {
                 </p>
 
                 <AddToCalendar />
+
+                <AddToGoogleWallet
+                  saveUrl={`/api/wallet?passId=${encodeURIComponent(
+                    generatedPass.passId
+                  )}&name=${encodeURIComponent(generatedPass.name)}&guests=${generatedPass.totalGuests}`}
+                />
               </div>
             ) : (
               <div className="flex aspect-[4/5] w-full max-w-sm flex-col items-center justify-center rounded-[32px] border-2 border-dashed border-border bg-card p-8 text-center text-muted-foreground">
