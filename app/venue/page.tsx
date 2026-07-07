@@ -91,13 +91,11 @@ export default function VenuePage() {
               </p>
               
               <div className="pt-3">
-                <Button 
-                  asChild
+                <Button
+                  render={<a href={googleMapsExternalUrl} target="_blank" rel="noopener noreferrer" />}
                   className="w-full bg-[#8B4F58] hover:bg-[#723E46] text-white rounded-xl h-10 text-xs font-medium gap-1.5 transition-all shadow-xs"
                 >
-                  <a href={googleMapsExternalUrl} target="_blank" rel="noopener noreferrer">
-                    Open in Google Maps <ExternalLink className="w-3.5 h-3.5" />
-                  </a>
+                  Open in Google Maps <ExternalLink className="w-3.5 h-3.5" />
                 </Button>
               </div>
             </div>
