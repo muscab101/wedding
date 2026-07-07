@@ -14,7 +14,7 @@ const fade = {
 
 export default function Home() {
   return (
-    <main className="relative flex min-h-screen w-full flex-col items-center justify-center overflow-hidden bg-background px-6 text-center">
+    <main className="relative flex min-h-screen w-full flex-col items-center justify-center overflow-hidden bg-background px-5 py-16 text-center sm:px-6">
       {/* Soft rose ambience */}
       <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(60%_50%_at_50%_0%,var(--brand-tint),transparent_70%)]" />
       <div className="pointer-events-none absolute inset-x-0 bottom-0 -z-10 h-1/3 bg-gradient-to-t from-brand-soft to-transparent" />
@@ -34,10 +34,10 @@ export default function Home() {
         variants={fade}
         initial="hidden"
         animate="show"
-        className="font-serif text-5xl leading-[1.05] tracking-tight text-brand sm:text-7xl"
+        className="w-full font-serif text-[2.75rem] leading-[1.08] tracking-tight text-brand sm:text-6xl md:text-7xl"
       >
-        Abdirahim
-        <span className="mx-3 font-light text-brand/40">&amp;</span>
+        Abdirahim{" "}
+        <span className="mx-1 font-light text-brand/40 sm:mx-3">&amp;</span>{" "}
         Creezel
       </motion.h1>
 
@@ -62,17 +62,17 @@ export default function Home() {
         variants={fade}
         initial="hidden"
         animate="show"
-        className="mt-10 flex flex-col gap-3 sm:flex-row"
+        className="mt-10 flex w-full max-w-xs flex-col gap-3 sm:max-w-none sm:flex-row sm:justify-center"
       >
         <Link
           href="/rsvp"
-          className="rounded-full bg-brand px-8 py-3 text-sm font-medium text-white shadow-sm transition hover:bg-brand-hover hover:shadow-md"
+          className="w-full rounded-full bg-brand px-8 py-3 text-center text-sm font-medium text-white shadow-sm transition hover:bg-brand-hover hover:shadow-md sm:w-auto"
         >
           RSVP &amp; Get Your Pass
         </Link>
         <Link
           href="/login"
-          className="rounded-full border border-border px-8 py-3 text-sm font-medium text-brand transition hover:bg-accent"
+          className="w-full rounded-full border border-border px-8 py-3 text-center text-sm font-medium text-brand transition hover:bg-accent sm:w-auto"
         >
           Sign In
         </Link>

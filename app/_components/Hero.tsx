@@ -33,8 +33,8 @@ export default function HeroSection() {
               "delay-100"
             )}`}
           >
-            Abdirahim
-            <span className="mx-2 font-light text-brand/40">&amp;</span>
+            Abdirahim{" "}
+            <span className="mx-1 font-light text-brand/40 sm:mx-2">&amp;</span>{" "}
             Creezel
           </h1>
 

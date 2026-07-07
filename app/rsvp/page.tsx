@@ -19,6 +19,7 @@ import {
   Minus,
   Plus,
   CalendarX2,
+  BadgeCheck,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
@@ -48,6 +49,7 @@ export default function RsvpAndPassPage() {
   const [celebrate, setCelebrate] = useState(false);
   const [authUser, setAuthUser] = useState<SupabaseUser | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
+  const [passVerified, setPassVerified] = useState(false);
   const passRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
@@ -78,6 +80,42 @@ export default function RsvpAndPassPage() {
     const savedPass = localStorage.getItem("wedding_pass");
     if (savedPass) setGeneratedPass(JSON.parse(savedPass));
   }, [authUser]);
+
+  // Track whether this pass has been verified/scanned at the gate. Once it has,
+  // the guest can no longer cancel it. Live-updates via realtime, so the pass
+  // flips to "Checked In" the moment the scanner approves it.
+  useEffect(() => {
+    const passId = generatedPass?.passId;
+    if (!passId) {
+      setPassVerified(false);
+      return;
+    }
+    let active = true;
+    supabase
+      .from("rsvps")
+      .select("scanned")
+      .eq("pass_id", passId)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (active) setPassVerified(!!data?.scanned);
+      });
+
+    const channel = supabase
+      .channel(`pass-status-${passId}`)
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "rsvps", filter: `pass_id=eq.${passId}` },
+        (payload) => {
+          if (active) setPassVerified(!!(payload.new as { scanned?: boolean }).scanned);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      active = false;
+      supabase.removeChannel(channel);
+    };
+  }, [generatedPass?.passId]);
 
   const handleRsvpSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -308,22 +346,32 @@ export default function RsvpAndPassPage() {
               )
             ) : (
               <div className="space-y-3 rounded-2xl bg-brand-soft p-4 text-center">
-                <CheckCircle className="mx-auto h-8 w-8 text-brand" />
-                <h4 className="text-sm font-semibold text-foreground">RSVP Confirmed!</h4>
+                {passVerified ? (
+                  <BadgeCheck className="mx-auto h-8 w-8 text-green-600" />
+                ) : (
+                  <CheckCircle className="mx-auto h-8 w-8 text-brand" />
+                )}
+                <h4 className="text-sm font-semibold text-foreground">
+                  {passVerified ? "Checked In ✓" : "RSVP Confirmed!"}
+                </h4>
                 <p className="text-xs leading-relaxed text-muted-foreground">
-                  Your spot is secured. To register a different name, clear this pass.
+                  {passVerified
+                    ? "Your pass has been verified at the gate, so it can no longer be changed or cancelled."
+                    : "Your spot is secured. To register a different name, clear this pass."}
                 </p>
-                <button
-                  onClick={() => {
-                    if (confirm("Do you want to clear this pass and RSVP again?")) {
-                      localStorage.removeItem("wedding_pass");
-                      setGeneratedPass(null);
-                    }
-                  }}
-                  className="mt-2 rounded-xl border border-red-100 px-3 py-1.5 text-xs text-red-600 transition hover:bg-red-50"
-                >
-                  Cancel &amp; Re-RSVP
-                </button>
+                {!passVerified && (
+                  <button
+                    onClick={() => {
+                      if (confirm("Do you want to clear this pass and RSVP again?")) {
+                        localStorage.removeItem("wedding_pass");
+                        setGeneratedPass(null);
+                      }
+                    }}
+                    className="mt-2 rounded-xl border border-red-100 px-3 py-1.5 text-xs text-red-600 transition hover:bg-red-50"
+                  >
+                    Cancel &amp; Re-RSVP
+                  </button>
+                )}
               </div>
             )}
           </div>
@@ -367,9 +415,15 @@ export default function RsvpAndPassPage() {
                       <div className="inline-flex items-center justify-center rounded-2xl border border-border bg-white p-2">
                         <QRCodeSVG value={generatedPass.passId} size={112} level="M" className="h-28 w-28" />
                       </div>
-                      <p className="max-w-[200px] text-[10px] text-muted-foreground">
-                        Please present this digital pass at the entrance gate.
-                      </p>
+                      {passVerified ? (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-green-50 px-2.5 py-1 text-[10px] font-semibold text-green-700">
+                          <BadgeCheck className="h-3 w-3" /> Verified · Checked In
+                        </span>
+                      ) : (
+                        <p className="max-w-[200px] text-[10px] text-muted-foreground">
+                          Please present this digital pass at the entrance gate.
+                        </p>
+                      )}
                     </div>
                   </div>
 
