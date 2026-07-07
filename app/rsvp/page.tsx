@@ -18,6 +18,7 @@ import {
   Lock,
   Minus,
   Plus,
+  CalendarX2,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
@@ -29,6 +30,13 @@ import {
 } from "@/components/ui/select";
 import Navbar from "../_components/Navbar";
 import Celebration from "../_components/Celebration";
+
+// RSVP closes this many days before the ceremony.
+const WEDDING_DATE = new Date("September 11, 2026 18:00:00");
+const RSVP_CLOSE_DAYS = 7;
+const RSVP_DEADLINE = new Date(
+  WEDDING_DATE.getTime() - RSVP_CLOSE_DAYS * 24 * 60 * 60 * 1000
+);
 
 export default function RsvpAndPassPage() {
   const [name, setName] = useState("");
@@ -42,6 +50,9 @@ export default function RsvpAndPassPage() {
   const [authLoading, setAuthLoading] = useState(true);
   const passRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
+
+  // Once we're within a week of the wedding, new RSVPs are closed.
+  const rsvpClosed = Date.now() >= RSVP_DEADLINE.getTime();
 
   // Require a logged-in guest before any pass / QR code is shown.
   useEffect(() => {
@@ -72,6 +83,10 @@ export default function RsvpAndPassPage() {
     e.preventDefault();
     if (!authUser) {
       router.push("/login");
+      return;
+    }
+    if (rsvpClosed) {
+      alert("RSVP is now closed — we're within a week of the wedding.");
       return;
     }
 
@@ -189,12 +204,18 @@ export default function RsvpAndPassPage() {
         <header className="space-y-3 text-center">
           <span className="eyebrow">RSVP &amp; Entry Pass</span>
           <h1 className="font-serif text-3xl tracking-tight text-brand sm:text-4xl">
-            {generatedPass ? "Your Digital Entry Pass" : "Confirm Your Attendance"}
+            {generatedPass
+              ? "Your Digital Entry Pass"
+              : rsvpClosed
+                ? "RSVP Closed"
+                : "Confirm Your Attendance"}
           </h1>
           <p className="mx-auto max-w-sm text-sm text-muted-foreground">
             {generatedPass
               ? "This pass is saved on your device. Please show it at the gate."
-              : "Fill out the form below to generate your official Digital Entry Pass."}
+              : rsvpClosed
+                ? "RSVPs are closed within a week of the wedding. Please contact the couple directly."
+                : "Fill out the form below to generate your official Digital Entry Pass."}
           </p>
         </header>
 
@@ -204,6 +225,18 @@ export default function RsvpAndPassPage() {
             <h3 className="font-serif text-lg font-semibold text-brand">RSVP Status</h3>
 
             {!generatedPass ? (
+              rsvpClosed ? (
+                <div className="space-y-3 rounded-2xl border border-border bg-muted/40 p-6 text-center">
+                  <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-accent">
+                    <CalendarX2 className="h-6 w-6 text-brand" />
+                  </div>
+                  <h4 className="text-sm font-semibold text-foreground">RSVP is now closed</h4>
+                  <p className="text-xs leading-relaxed text-muted-foreground">
+                    RSVPs closed one week before the wedding. If you still need to attend,
+                    please contact the couple directly.
+                  </p>
+                </div>
+              ) : (
               <form onSubmit={handleRsvpSubmit} className="space-y-4">
                 <div className="space-y-1.5">
                   <label className="text-xs font-medium text-muted-foreground">Full Name</label>
@@ -272,6 +305,7 @@ export default function RsvpAndPassPage() {
                   Confirm RSVP
                 </button>
               </form>
+              )
             ) : (
               <div className="space-y-3 rounded-2xl bg-brand-soft p-4 text-center">
                 <CheckCircle className="mx-auto h-8 w-8 text-brand" />
