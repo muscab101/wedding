@@ -37,7 +37,7 @@ export function AddToGoogleWallet({
       return (
         iosFallback ?? (
           <p className={`text-center text-xs text-muted-foreground ${className}`}>
-            Google Wallet isn&apos;t available on iOS — use &ldquo;Save Pass to Phone&rdquo; instead.
+            Google Wallet isn&apos;t available on iOS — use &ldquo;Save / Print Pass&rdquo; above or screenshot your pass.
           </p>
         )
       );

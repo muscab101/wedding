@@ -3,7 +3,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { QRCodeSVG } from "qrcode.react";
-import { domToPng } from "modern-screenshot";
 import { supabase } from "@/lib/supabase";
 import { generatePassId, rsvpInputSchema } from "@/lib/schemas";
 import type { RsvpPass } from "@/lib/types";
@@ -14,7 +13,6 @@ import {
   MapPin,
   Download,
   Loader2,
-  Wallet,
   Lock,
   Minus,
   Plus,
@@ -47,7 +45,6 @@ export default function RsvpAndPassPage() {
   const [status, setStatus] = useState("attending");
   const [loading, setLoading] = useState(false);
   const [generatedPass, setGeneratedPass] = useState<RsvpPass | null>(null);
-  const [savingPass, setSavingPass] = useState(false);
   const [celebrate, setCelebrate] = useState(false);
   const [authUser, setAuthUser] = useState<SupabaseUser | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
@@ -173,27 +170,6 @@ export default function RsvpAndPassPage() {
       alert("Something went wrong, please try again.");
     } finally {
       setLoading(false);
-    }
-  };
-
-  // Save the pass as a high-resolution PNG.
-  const handleSavePass = async () => {
-    if (!passRef.current) return;
-    setSavingPass(true);
-    try {
-      const dataUrl = await domToPng(passRef.current, {
-        scale: 3,
-        backgroundColor: "#ffffff",
-      });
-      const link = document.createElement("a");
-      link.download = `wedding-pass-${generatedPass?.passId ?? "entry"}.png`;
-      link.href = dataUrl;
-      link.click();
-    } catch (error) {
-      console.error("Failed to save pass:", error);
-      alert("Could not save the pass image. Please try the Print option instead.");
-    } finally {
-      setSavingPass(false);
     }
   };
 
@@ -438,19 +414,6 @@ export default function RsvpAndPassPage() {
                     </button>
                   </div>
                 </div>
-
-                <button
-                  type="button"
-                  onClick={handleSavePass}
-                  disabled={savingPass}
-                  className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-foreground text-sm font-medium text-white transition hover:opacity-90 disabled:opacity-60"
-                >
-                  {savingPass ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wallet className="h-4 w-4" />}
-                  Save Pass to Phone
-                </button>
-                <p className="px-2 text-center text-[10px] text-muted-foreground">
-                  Downloads your pass as an image you can keep in your Photos and show at the gate.
-                </p>
 
                 <AddToCalendar />
 
