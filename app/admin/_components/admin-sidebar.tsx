@@ -7,6 +7,7 @@ import { supabase } from "@/lib/supabase";
 import {
   LayoutDashboard,
   Users,
+  BadgeCheck,
   MessageSquare,
   Video,
   Settings,
@@ -17,6 +18,7 @@ import {
 const menuItems = [
   { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
   { name: "Guests", href: "/admin/guests", icon: Users },
+  { name: "Verify Guests", href: "/admin/verify", icon: BadgeCheck },
   { name: "Messages", href: "/admin/messages", icon: MessageSquare },
   { name: "Videos", href: "/admin/videos", icon: Video },
   { name: "Settings", href: "/admin/settings", icon: Settings },

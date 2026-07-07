@@ -8,17 +8,17 @@ import { Scanner, type IDetectedBarcode } from "@yudiel/react-qr-scanner";
 import {
   Loader2,
   Hash,
-  Clock,
   Users,
   CheckCircle2,
   XCircle,
   ScanLine,
+  ShieldAlert,
 } from "lucide-react";
 import { passIdSchema } from "@/lib/schemas";
 import type { Rsvp } from "@/lib/types";
 import { ScannerNavbar } from "../_components/Scanner-navbar";
 
-type ScanStatus = "ready" | "found" | "success" | "error";
+type ScanStatus = "ready" | "checked" | "error";
 
 export default function ScannerPage() {
   const [user, setUser] = useState<User | null>(null);
@@ -45,7 +45,9 @@ export default function ScannerPage() {
     return () => subscription.unsubscribe();
   }, [router]);
 
-  const findGuestByPass = async (rawValue: string) => {
+  // Look up the pass and simply report whether the admin has verified it.
+  // The scanner is read-only — it never changes any records.
+  const checkPass = async (rawValue: string) => {
     const parsed = passIdSchema.safeParse(rawValue);
     if (!parsed.success) {
       setStatus("error");
@@ -72,32 +74,7 @@ export default function ScannerPage() {
     }
 
     setGuestData(data as Rsvp);
-    setStatus("found");
-  };
-
-  const confirmVerification = async () => {
-    if (!guestData) return;
-    // Atomic: only the first scan of a pass matches `.eq("scanned", false)`.
-    const { data, error } = await supabase
-      .from("rsvps")
-      .update({ scanned: true, scanned_at: new Date().toISOString() })
-      .eq("id", guestData.id)
-      .eq("scanned", false)
-      .select();
-
-    if (error) {
-      console.error("Verification failed:", error);
-      setStatus("error");
-      setMessage("Could not verify. Please retry.");
-      return;
-    }
-    if (!data || data.length === 0) {
-      setStatus("error");
-      setMessage("This pass has already been used.");
-      return;
-    }
-    setStatus("success");
-    setMessage("Access granted.");
+    setStatus("checked");
   };
 
   const handleScan = (codes: IDetectedBarcode[]) => {
@@ -105,7 +82,7 @@ export default function ScannerPage() {
     const value = codes[0]?.rawValue;
     if (!value) return;
     setScanned(true);
-    findGuestByPass(value);
+    checkPass(value);
   };
 
   const reset = () => {
@@ -122,6 +99,8 @@ export default function ScannerPage() {
       </div>
     );
 
+  const allowed = !!guestData?.scanned;
+
   return (
     <div className="min-h-screen bg-muted/40">
       <ScannerNavbar userEmail={user?.email ?? ""} />
@@ -129,7 +108,7 @@ export default function ScannerPage() {
       <main className="mx-auto max-w-md space-y-5 px-4 py-8">
         <div className="space-y-1 text-center">
           <span className="eyebrow justify-center">Gate Control</span>
-          <h1 className="font-serif text-2xl text-brand">Scan Entry Pass</h1>
+          <h1 className="font-serif text-2xl text-brand">Check Entry Pass</h1>
         </div>
 
         <div className="overflow-hidden rounded-3xl border border-border bg-card p-4 shadow-sm">
@@ -148,44 +127,41 @@ export default function ScannerPage() {
             </div>
           )}
 
-          {status === "found" && guestData && (
-            <div className="space-y-4 rounded-2xl border border-brand/30 bg-card p-5">
-              <div className="space-y-1 text-center">
-                <p className="text-xs uppercase tracking-widest text-muted-foreground">Guest Details</p>
-                <h2 className="font-serif text-2xl text-brand">{guestData.name}</h2>
-              </div>
-              <div className="grid grid-cols-2 gap-3 border-y border-border py-4 text-sm">
-                <div className="flex items-center gap-2 text-foreground">
-                  <Users className="h-4 w-4 text-brand" /> {guestData.total_guests} Guests
-                </div>
-                <div className="flex items-center gap-2 font-mono text-foreground">
-                  <Hash className="h-4 w-4 text-brand" /> {guestData.pass_id}
-                </div>
-                <div className="col-span-2 flex items-center gap-2 text-muted-foreground">
-                  <Clock className="h-4 w-4 text-brand" />
-                  Registered: {guestData.created_at ? new Date(guestData.created_at).toLocaleString() : "N/A"}
-                </div>
-              </div>
-              {guestData.scanned ? (
-                <div className="flex items-center justify-center gap-2 rounded-xl bg-red-50 p-3 font-semibold text-red-600">
-                  <XCircle className="h-5 w-5" /> Already Used!
+          {status === "checked" && guestData && (
+            <div className="space-y-4">
+              {/* Verdict banner */}
+              {allowed ? (
+                <div className="flex flex-col items-center gap-1 rounded-2xl bg-green-50 p-6 text-center text-green-700">
+                  <CheckCircle2 className="h-10 w-10" />
+                  <p className="text-lg font-bold">Access Allowed</p>
+                  <p className="text-xs text-green-600">This guest has been verified by the admin.</p>
                 </div>
               ) : (
-                <button
-                  onClick={confirmVerification}
-                  className="h-11 w-full rounded-xl bg-brand text-sm font-medium text-white transition hover:bg-brand-hover"
-                >
-                  Verify &amp; Approve Entry
-                </button>
+                <div className="flex flex-col items-center gap-1 rounded-2xl bg-red-50 p-6 text-center text-red-600">
+                  <ShieldAlert className="h-10 w-10" />
+                  <p className="text-lg font-bold">Not Verified</p>
+                  <p className="text-xs text-red-500">
+                    This guest has not been verified yet. Please direct them to the admin.
+                  </p>
+                </div>
               )}
+
+              {/* Guest details */}
+              <div className="space-y-1 rounded-2xl border border-border p-5 text-center">
+                <p className="text-xs uppercase tracking-widest text-muted-foreground">Guest</p>
+                <h2 className="font-serif text-2xl text-brand">{guestData.name}</h2>
+                <div className="mt-3 flex items-center justify-center gap-4 text-sm text-foreground">
+                  <span className="flex items-center gap-1.5">
+                    <Users className="h-4 w-4 text-brand" /> {guestData.total_guests} Guests
+                  </span>
+                  <span className="flex items-center gap-1.5 font-mono">
+                    <Hash className="h-4 w-4 text-brand" /> {guestData.pass_id}
+                  </span>
+                </div>
+              </div>
             </div>
           )}
 
-          {status === "success" && (
-            <div className="flex items-center justify-center gap-2 rounded-xl bg-green-50 p-4 text-center font-semibold text-green-700">
-              <CheckCircle2 className="h-5 w-5" /> {message}
-            </div>
-          )}
           {status === "error" && (
             <div className="flex items-center justify-center gap-2 rounded-xl bg-red-50 p-4 text-center font-medium text-red-600">
               <XCircle className="h-5 w-5" /> {message}
