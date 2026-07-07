@@ -4,6 +4,7 @@ import React from "react";
 import { MapPin, Calendar, Clock, Compass, Car, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Navbar from "../_components/Navbar";
+import { AddToCalendar } from "../_components/AddToCalendar";
 
 export default function VenuePage() {
   // Direct link + embed for Diamond Lounge, West Ealing, London
@@ -74,6 +75,8 @@ export default function VenuePage() {
                 </Button>
               </div>
             </div>
+
+            <AddToCalendar />
           </div>
 
           {/* Map */}

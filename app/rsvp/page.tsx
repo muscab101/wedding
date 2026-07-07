@@ -31,6 +31,7 @@ import {
 } from "@/components/ui/select";
 import Navbar from "../_components/Navbar";
 import Celebration from "../_components/Celebration";
+import { AddToCalendar } from "../_components/AddToCalendar";
 
 // RSVP closes this many days before the ceremony.
 const WEDDING_DATE = new Date("September 11, 2026 18:00:00");
@@ -449,6 +450,8 @@ export default function RsvpAndPassPage() {
                 <p className="px-2 text-center text-[10px] text-muted-foreground">
                   Downloads your pass as an image you can keep in your Photos and show at the gate.
                 </p>
+
+                <AddToCalendar />
               </div>
             ) : (
               <div className="flex aspect-[4/5] w-full max-w-sm flex-col items-center justify-center rounded-[32px] border-2 border-dashed border-border bg-card p-8 text-center text-muted-foreground">
