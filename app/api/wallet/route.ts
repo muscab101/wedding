@@ -29,8 +29,19 @@ export async function GET(req: NextRequest) {
       { status: 501 }
     );
   }
-  // Env vars often store the key with literal "\n" — normalise to real newlines.
-  const privateKey = rawPrivateKey.replace(/\\n/g, "\n");
+  // Accept the key as a raw PEM (with real or "\n"-escaped newlines) OR as a
+  // single-line base64 encoding of the PEM (paste-safe — can't be truncated on
+  // newlines). Normalise whatever we get into a real multi-line PEM.
+  let privateKey = rawPrivateKey.trim();
+  if (!privateKey.includes("BEGIN PRIVATE KEY")) {
+    try {
+      const decoded = Buffer.from(privateKey, "base64").toString("utf8");
+      if (decoded.includes("BEGIN PRIVATE KEY")) privateKey = decoded;
+    } catch {
+      /* not base64 — fall through and let signing surface the error */
+    }
+  }
+  privateKey = privateKey.replace(/\\n/g, "\n");
 
   const { searchParams } = new URL(req.url);
   const passId = (searchParams.get("passId") ?? "").trim();
