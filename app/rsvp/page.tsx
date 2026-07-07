@@ -1,22 +1,25 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { QRCodeSVG } from "qrcode.react";
 import { domToPng } from "modern-screenshot";
 import { supabase } from "@/lib/supabase";
 import { generatePassId, rsvpInputSchema } from "@/lib/schemas";
 import type { RsvpPass } from "@/lib/types";
-import { 
-  CheckCircle, 
-  User, 
-  Users, 
-  Calendar, 
-  MapPin, 
-  Download, 
-  QrCode, 
+import type { User as SupabaseUser } from "@supabase/supabase-js";
+import {
+  CheckCircle,
+  User,
+  Users,
+  Calendar,
+  MapPin,
+  Download,
+  QrCode,
   Sparkles,
   Loader2,
-  Wallet
+  Wallet,
+  Lock
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -38,18 +41,50 @@ export default function RsvpAndPassPage() {
   const [generatedPass, setGeneratedPass] = useState<RsvpPass | null>(null);
   const [savingPass, setSavingPass] = useState(false);
   const [celebrate, setCelebrate] = useState(false);
+  const [authUser, setAuthUser] = useState<SupabaseUser | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
   const passRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
 
-  // 1. Marka uu boggu kaco, hubi haddii uu Pass horey ugu keydsanaa localStorage
+  // Require a logged-in guest before any pass / QR code is shown.
+  // No session => no form, no pass, no QR.
   useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      setAuthUser(data.session?.user ?? null);
+      setAuthLoading(false);
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setAuthUser(session?.user ?? null);
+      setAuthLoading(false);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  // Restore a previously generated pass from localStorage — but only for a
+  // signed-in guest, so a logged-out visitor can never see a QR code.
+  useEffect(() => {
+    if (!authUser) {
+      setGeneratedPass(null);
+      return;
+    }
     const savedPass = localStorage.getItem("wedding_pass");
     if (savedPass) {
       setGeneratedPass(JSON.parse(savedPass));
     }
-  }, []);
+  }, [authUser]);
 
   const handleRsvpSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Hard guard: never issue a pass to a visitor without a session.
+    if (!authUser) {
+      router.push("/login");
+      return;
+    }
 
     // Validate input before touching Firestore.
     const parsed = rsvpInputSchema.safeParse({
@@ -123,6 +158,47 @@ export default function RsvpAndPassPage() {
       setSavingPass(false);
     }
   };
+
+  // While we resolve the session, show a lightweight loader.
+  if (authLoading) {
+    return (
+      <>
+        <Navbar />
+        <div className="w-full min-h-screen bg-white flex items-center justify-center">
+          <Loader2 className="w-6 h-6 animate-spin text-[#8B4F58]" />
+        </div>
+      </>
+    );
+  }
+
+  // No session => block the entire RSVP / pass flow behind a sign-in gate.
+  if (!authUser) {
+    return (
+      <>
+        <Navbar />
+        <div className="w-full min-h-screen bg-white flex items-center justify-center px-4">
+          <div className="w-full max-w-sm text-center bg-white border border-gray-100 rounded-[32px] shadow-xs p-8 space-y-4">
+            <div className="w-14 h-14 rounded-2xl bg-[#8B4F58]/5 flex items-center justify-center mx-auto">
+              <Lock className="w-6 h-6 text-[#8B4F58]" />
+            </div>
+            <h1 className="text-2xl font-serif text-[#8B4F58] tracking-tight">
+              Sign in to get your Entry Pass
+            </h1>
+            <p className="text-gray-400 text-xs leading-relaxed max-w-xs mx-auto">
+              Your QR entry pass is reserved for invited guests. Please sign in
+              to RSVP and receive your official Digital Entry Pass.
+            </p>
+            <Button
+              onClick={() => router.push("/login")}
+              className="w-full bg-[#8B4F58] hover:bg-[#723E46] text-white rounded-xl h-11 font-medium text-sm transition-all"
+            >
+              Sign In to Continue
+            </Button>
+          </div>
+        </div>
+      </>
+    );
+  }
 
   return (
     <>
