@@ -17,11 +17,14 @@ if (!supabaseUrl || !supabaseAnonKey) {
 // - flowType "pkce": OAuth returns a short-lived `?code=` that we exchange for a
 //   session. This is more reliable in production than the implicit flow (which
 //   returns tokens in the URL hash that can be dropped on redirect).
+// detectSessionInUrl is OFF: the OAuth code is exchanged explicitly on the
+// /auth/callback page so the flow is deterministic and errors are visible,
+// instead of relying on an implicit URL scan that can silently no-op in prod.
 export const supabase = createClient(supabaseUrl!, supabaseAnonKey!, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
-    detectSessionInUrl: true,
+    detectSessionInUrl: false,
     flowType: "pkce",
   },
 });
