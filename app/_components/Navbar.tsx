@@ -52,7 +52,17 @@ export default function Navbar() {
     }
   };
 
-  // Liiska cusub ee loo habeeyay baahida martida
+  // Profile details from the auth provider (e.g. Google supplies avatar + name).
+  const meta = (user?.user_metadata ?? {}) as {
+    avatar_url?: string;
+    picture?: string;
+    full_name?: string;
+    name?: string;
+  };
+  const avatarUrl = meta.avatar_url || meta.picture || null;
+  const displayName = meta.full_name || meta.name || user?.email || "Guest";
+
+  // Guest navigation items
   const navItems = [
     { name: "Home", href: "/dashboard", icon: Home },
     { name: "RSVP & Pass", href: "/rsvp", icon: QrCode },
@@ -65,17 +75,17 @@ export default function Navbar() {
     <div className="w-full bg-transparent px-3 py-4 sticky top-0 z-50 flex justify-center">
       <nav className="w-full max-w-6xl bg-white/90 backdrop-blur-md border border-[#8B4F58]/10 shadow-[0_4px_20px_-4px_rgba(139,79,88,0.1)] rounded-full px-4 sm:px-6 py-3 flex items-center justify-between transition-all duration-300">
         
-        {/* Bidix: Logo (M-R & Heart) */}
+        {/* Left: Logo (C & A & Heart) */}
         <Link href="/" className="flex items-center gap-1.5 group pl-1 shrink-0">
           <Heart className="w-6 h-6 fill-[#8B4F58] text-[#8B4F58] transition-transform group-hover:scale-110 duration-300" />
-          {/* Qoraalka M-R wuxuu dhumayaa marka mobile aad u yar la joogo si menu-ka dhexda u rarto */}
+          {/* The "C & A" text hides on very small screens to make room for the center menu */}
           <span className="text-xl font-serif font-semibold text-[#8B4F58] tracking-wider hidden sm:inline">
             C &amp; A
           </span>
         </Link>
 
-        {/* Dhexda: Menu Link-yada (Isla falgalaya shaashadaha) */}
-        {/* `gap-6 sm:gap-8` wuxuu isku soo dhoweynayaa icon-nada marka mobile la joogo */}
+        {/* Center: Menu links (responsive) */}
+        {/* `gap-6 sm:gap-8` tightens the icons together on mobile */}
         <div className="flex items-center gap-6 sm:gap-8 justify-center mx-auto">
           {navItems.map((item) => {
             const Icon = item.icon;
@@ -91,13 +101,13 @@ export default function Navbar() {
                     : "text-gray-500 hover:text-[#8B4F58]"
                 }`}
               >
-                {/* Icon-ka had iyo jeer wuu muuqdaa */}
+                {/* The icon is always visible */}
                 <Icon className={`w-5 h-5 sm:w-4 sm:h-4 ${isActive ? "text-[#8B4F58]" : "text-gray-400 hover:text-[#8B4F58]"}`} />
                 
-                {/* Qoraalka (`item.name`) wuxuu dhumayaa marka md (desktop) laga hoos maro sida sawirka dambe */}
+                {/* The label (`item.name`) hides below the md (desktop) breakpoint */}
                 <span className="hidden md:inline">{item.name}</span>
                 
-                {/* Dot-ka casriyaysan ee ka hooseeya icon-ka furan */}
+                {/* Modern active dot beneath the current icon */}
                 {isActive && (
                   <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1 h-1 bg-[#8B4F58] rounded-full" />
                 )}
@@ -106,20 +116,30 @@ export default function Navbar() {
           })}
         </div>
 
-        {/* Midig: Profile Dropdown ama Login buttons */}
+        {/* Right: Profile dropdown or login buttons */}
         <div className="flex items-center gap-2 pr-1 shrink-0">
           {!loading && (
             <>
               {user ? (
                 <DropdownMenu>
-                  <DropdownMenuTrigger className="relative h-9 w-9 rounded-full bg-[#FFF0F5] border border-[#8B4F58]/20 flex items-center justify-center text-[#8B4F58] font-bold text-sm uppercase hover:bg-[#FFE4E1] cursor-pointer outline-none transition-all shadow-sm">
-                    {user.email?.charAt(0) || "G"}
+                  <DropdownMenuTrigger className="relative h-9 w-9 rounded-full bg-[#FFF0F5] border border-[#8B4F58]/20 flex items-center justify-center text-[#8B4F58] font-bold text-sm uppercase hover:bg-[#FFE4E1] cursor-pointer outline-none transition-all shadow-sm overflow-hidden">
+                    {avatarUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={avatarUrl}
+                        alt={displayName}
+                        referrerPolicy="no-referrer"
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      user.email?.charAt(0) || "G"
+                    )}
                   </DropdownMenuTrigger>
                   
                   <DropdownMenuContent className="w-54 bg-white border-[#8B4F58]/10 rounded-2xl shadow-xl mt-3 p-1.5" align="end">
                     <DropdownMenuGroup>
-                      <DropdownMenuLabel className="font-serif text-[#8B4F58] text-sm px-2.5 pt-2">
-                        Welcome back
+                      <DropdownMenuLabel className="font-serif text-[#8B4F58] text-sm px-2.5 pt-2 truncate">
+                        {displayName}
                       </DropdownMenuLabel>
                       <div className="px-2.5 pb-2 text-xs text-gray-400 truncate">
                         {user.email}
@@ -156,7 +176,7 @@ export default function Navbar() {
                   >
                     Sign In
                   </Button>
-                  {/* Register-ka wuxuu ku dhumayaa mobile-ka yar si ay booska u badbaadiyaan */}
+                  {/* Register hides on small mobile to save space */}
                   <Button 
                     onClick={() => router.push("/register")}
                     className="bg-[#8B4F58] hover:bg-[#723E46] text-white rounded-full font-medium text-xs h-8 px-3 shadow-sm hidden sm:inline-flex"

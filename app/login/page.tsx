@@ -17,7 +17,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  // Nidaamka hagidda isticmaalayaasha ee ku salaysan Email-ka
+  // Route the user based on their email
   const handleUserRedirect = (userEmail: string | null) => {
     if (!userEmail) {
       router.push("/dashboard");
@@ -31,11 +31,11 @@ export default function LoginPage() {
     } else if (cleanEmail === "scanner@gmail.com") {
       router.push("/scanner");
     } else {
-      router.push("/dashboard"); // Martida caadiga ah
+      router.push("/dashboard"); // Regular guest
     }
   };
 
-  // 1. Habka Email & Password Login
+  // 1. Email & Password login
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -48,7 +48,7 @@ export default function LoginPage() {
 
     if (signInError) {
       console.error(signInError);
-      setError("Email-ka ama Password-ka aad gelisay ma saxan.");
+      setError("The email or password you entered is incorrect.");
       setLoading(false);
       return;
     }
@@ -57,7 +57,7 @@ export default function LoginPage() {
     setLoading(false);
   };
 
-  // 2. Habka Google Account Login (redirects to Google, then back)
+  // 2. Google Account login (redirects to Google, then back)
   const handleGoogleLogin = async () => {
     setError("");
     setLoading(true);
@@ -67,7 +67,7 @@ export default function LoginPage() {
     });
     if (oauthError) {
       console.error(oauthError);
-      setError("Google Login waa uu fashilmay. Fadlan isku day markale.");
+      setError("Google login failed. Please try again.");
       setLoading(false);
     }
   };

@@ -4,7 +4,7 @@ import React from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { LogOut, ScanLine } from "lucide-react"; // Hubi inaad haysato lucide-react (wuxuu la yimaadaa Shadcn)
+import { LogOut, ScanLine } from "lucide-react";
 
 export function ScannerNavbar({ userEmail }: { userEmail: string }) {
   const router = useRouter();

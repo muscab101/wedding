@@ -10,7 +10,7 @@ import Image from "next/image";
 export default function HeroSection() {
   const [animate, setAnimate] = useState(false);
 
-  // Waxay kicinaysaa animation-ka isla mark marka boggu soo gado (Hydration ka dib)
+  // Triggers the entrance animation right after the page mounts (post-hydration)
   useEffect(() => {
     setAnimate(true);
   }, []);
@@ -20,10 +20,10 @@ export default function HeroSection() {
       
       <div className="max-w-6xl w-full grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
         
-        {/* DHINACA BIDIX: QORAALKA (TEXT CONTENT) */}
+        {/* LEFT SIDE: TEXT CONTENT */}
         <div className="lg:col-span-7 flex flex-col justify-center text-center lg:text-left space-y-6 md:space-y-8">
           
-          {/* Guurka Sanadka / Tagline */}
+          {/* Tagline */}
           <div 
             className={`inline-flex items-center justify-center lg:justify-start gap-2 border border-[#8B4F58]/10 px-4 py-1.5 rounded-full shadow-sm w-fit mx-auto lg:mx-0 transition-all duration-1000 transform ${
               animate ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
@@ -35,7 +35,7 @@ export default function HeroSection() {
             </span>
           </div>
 
-          {/* Magacyada Lammaanaha */}
+          {/* Couple's Names */}
           <h1 
             className={`text-5xl md:text-7xl font-serif text-[#8B4F58] tracking-tight leading-tight transition-all duration-1000 delay-200 transform ${
               animate ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"
@@ -48,7 +48,7 @@ export default function HeroSection() {
             Creezel Tie
           </h1>
 
-          {/* Sharaxaad Kooban */}
+          {/* Short Description */}
           <p 
             className={`text-gray-500 max-w-xl text-base md:text-lg leading-relaxed mx-auto lg:mx-0 transition-all duration-1000 delay-400 transform ${
               animate ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"
@@ -58,7 +58,7 @@ export default function HeroSection() {
             begin our beautiful journey together. Your presence is our greatest gift.
           </p>
 
-          {/* Xogta Muhiimka ah (Date & Venue Mini Cards) */}
+          {/* Key Info (Date & Venue Mini Cards) */}
           <div 
             className={`grid grid-cols-2 gap-4 max-w-md mx-auto lg:mx-0 transition-all duration-1000 delay-600 transform ${
               animate ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"
@@ -81,7 +81,7 @@ export default function HeroSection() {
             </div>
           </div>
 
-          {/* Badamada Falgalka (CTAs) */}
+          {/* Action Buttons (CTAs) */}
           <div 
             className={`flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 pt-2 transition-all duration-1000 delay-800 transform ${
               animate ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"
@@ -103,7 +103,7 @@ export default function HeroSection() {
 
         </div>
 
-        {/* DHINACA MIDIG: SAWIRKA OO LEH FRAME QURUX BADAN (IMAGE FRAME) */}
+        {/* RIGHT SIDE: IMAGE WITH DECORATIVE FRAME */}
         <div 
           className={`lg:col-span-5 flex justify-center items-center transition-all duration-[1200ms] cubic-bezier(0.16, 1, 0.3, 1) delay-300 transform ${
             animate ? "opacity-100 scale-100 translate-x-0" : "opacity-0 scale-95 translate-y-12 lg:translate-y-0 lg:translate-x-12"

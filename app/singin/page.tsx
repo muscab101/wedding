@@ -18,20 +18,20 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  // 1. Diiwaangelinta cusub (Email, Password & Confirm)
+  // 1. New registration (Email, Password & Confirm)
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
 
-    // Xaqiiji in labada password ay is leeyihiin
+    // Make sure both passwords match
     if (password !== confirmPassword) {
-      setError("Password-ka iyo Xaqiijintiisa iskuma mid ah.");
+      setError("The password and its confirmation do not match.");
       return;
     }
 
-    // Xaqiiji dhumucda password-ka (Firebase wuxuu rabaa ugu yaraan 6 xaraf)
+    // Enforce a minimum password length (at least 6 characters)
     if (password.length < 6) {
-      setError("Password-ku waa inuu ka koobnaadaa ugu yaraan 6 xaraf.");
+      setError("Password must be at least 6 characters long.");
       return;
     }
 
@@ -45,11 +45,11 @@ export default function RegisterPage() {
     if (signUpError) {
       console.error(signUpError);
       if (signUpError.message.toLowerCase().includes("already")) {
-        setError("Email-kan hadda ka hor ayaa la isticmaalay.");
+        setError("This email is already in use.");
       } else if (signUpError.message.toLowerCase().includes("valid")) {
-        setError("Qaabka Email-ka aad u qortay ma saxan.");
+        setError("The email address you entered is not valid.");
       } else {
-        setError("Waxaa dhacay khaldan inta ay diiwaangelintu socotay.");
+        setError("Something went wrong during registration.");
       }
       setLoading(false);
       return;
@@ -59,7 +59,7 @@ export default function RegisterPage() {
     setLoading(false);
   };
 
-  // 2. Ku gelidda Google Account (redirects to Google, then back)
+  // 2. Sign in with Google Account (redirects to Google, then back)
   const handleGoogleLogin = async () => {
     setError("");
     setLoading(true);
@@ -69,7 +69,7 @@ export default function RegisterPage() {
     });
     if (oauthError) {
       console.error(oauthError);
-      setError("Google Login waa uu fashilmay.");
+      setError("Google login failed.");
       setLoading(false);
     }
   };

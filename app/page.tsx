@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 
 export default function Home() {
-  // 1. Animation-ka Qoraalka (Xaraf-xaraf ama erey-erey)
+  // 1. Text animation (letter-by-letter or word-by-word)
   const textWords = "Welcome to Our Wedding Celebration".split(" ");
 
   return (
@@ -13,19 +13,19 @@ export default function Home() {
       {/* BACKGROUND IMAGE WITH ZOOM-OUT ANIMATION */}
       <motion.div
         initial={{ scale: 1.3, opacity: 0 }}
-        animate={{ scale: 1, opacity: 0.4 }} // Opcacity 0.4 si qoraalku u muuqdo, waad kordhin kartaa hadaad rabto
+        animate={{ scale: 1, opacity: 0.4 }} // Opacity 0.4 so the text stays visible; increase it if you want
         transition={{ duration: 3.5, ease: "easeInOut" }}
         className="absolute inset-0 w-full h-full bg-cover bg-center"
         style={{ backgroundImage: "url('/wedding-hero.jpg')" }}
       />
 
-      {/* ROSE & WHITE GRADIENT OVERLAY (Si uu midabka Rose u soo baxo) */}
+      {/* ROSE & WHITE GRADIENT OVERLAY (to bring out the rose tint) */}
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#FFF0F5]/30 to-white/90 pointer-events-none" />
 
-      {/* CONTENT (QORAALADA IYO BUTTONS-KA) */}
+      {/* CONTENT (TEXT AND BUTTONS) */}
       <div className="relative z-10 text-center px-4 max-w-3xl flex flex-col items-center">
         
-        {/* ANIMATED TEXT (Erey-Erey u soo baxaya) */}
+        {/* ANIMATED TEXT (appears word-by-word) */}
         <h1 className="text-5xl md:text-7xl font-serif text-[#8B4F58] mb-6 tracking-wide drop-shadow-sm">
           {textWords.map((word, index) => (
             <motion.span
@@ -34,7 +34,7 @@ export default function Home() {
               animate={{ opacity: 1, y: 0 }}
               transition={{
                 duration: 0.8,
-                delay: 1.5 + index * 0.2, // Wuxuu bilaabanayaa marka sawirka zoom-out-kiisa xoogaa socdo
+                delay: 1.5 + index * 0.2, // Starts once the image zoom-out is partly underway
                 ease: "easeOut"
               }}
               className="inline-block mr-3"
@@ -44,7 +44,7 @@ export default function Home() {
           ))}
         </h1>
 
-        {/* QORAAL KOOBAN OO SII DHASHA */}
+        {/* SHORT FADE-IN SUBTITLE */}
         <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}

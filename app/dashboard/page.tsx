@@ -5,7 +5,7 @@ import EventDetails from '../_components/EventDetails'
 
 function page() {
   return (
-    // Halkan waxaa lagu daray bg-ga weyn ee soft-ka ah iyo dhererka buuxa ee shaashada
+    // Soft, full-height page background
     <div className="min-h-screen w-full bg-[#FFF0F5]/30">
       <Navbar />
       <HeroSection />
