@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Clock, Calendar, Heart, MessageSquare, Sparkles } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import type { Wish } from "@/lib/types";
+import { useAppSettings } from "@/hooks/useAppSettings";
 import Reveal from "./Reveal";
 
 const timeline = [
@@ -35,14 +36,16 @@ export default function EventDetails() {
   const [wishes, setWishes] = useState<Wish[]>([]);
   const [loading, setLoading] = useState(true);
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+  const { settings } = useAppSettings();
 
-  // Countdown to the ceremony
+  // Countdown to the ceremony (uses the admin-editable wedding date)
   useEffect(() => {
-    const target = new Date("September 11, 2026 18:00:00").getTime();
+    const target = new Date(settings.wedding_date).getTime();
     const interval = setInterval(() => {
       const diff = target - Date.now();
       if (diff < 0) {
         clearInterval(interval);
+        setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
         return;
       }
       setTimeLeft({
@@ -53,7 +56,7 @@ export default function EventDetails() {
       });
     }, 1000);
     return () => clearInterval(interval);
-  }, []);
+  }, [settings.wedding_date]);
 
   // Latest wishes from Supabase, with live updates
   useEffect(() => {

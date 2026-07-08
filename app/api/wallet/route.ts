@@ -6,6 +6,25 @@ export const runtime = "nodejs";
 
 const PASS_ID_REGEX = /^WD-[A-Z0-9]{6}$/;
 
+// Read the current (admin-editable) wedding date from Supabase; fall back to
+// the default if the settings row can't be reached.
+async function getWeddingDate(): Promise<string> {
+  const fallback = "2026-09-11T18:00:00+01:00";
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !key) return fallback;
+  try {
+    const res = await fetch(
+      `${url}/rest/v1/app_settings?id=eq.1&select=wedding_date`,
+      { headers: { apikey: key, Authorization: `Bearer ${key}` }, cache: "no-store" }
+    );
+    const rows = (await res.json()) as { wedding_date?: string }[];
+    return rows?.[0]?.wedding_date ?? fallback;
+  } catch {
+    return fallback;
+  }
+}
+
 /**
  * GET /api/wallet?passId=WD-XXXXXX&name=...&guests=2
  *
@@ -52,6 +71,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Invalid pass id." }, { status: 400 });
   }
 
+  const weddingIso = await getWeddingDate();
   const classId = `${issuerId}.wedding_event`;
   const objectId = `${issuerId}.${passId.replace(/[^\w.-]/g, "_")}`;
 
@@ -71,7 +91,7 @@ export async function GET(req: NextRequest) {
         },
       },
     },
-    dateTime: { start: "2026-09-11T18:00:00+01:00" },
+    dateTime: { start: weddingIso },
     hexBackgroundColor: "#8b4f58",
   };
 

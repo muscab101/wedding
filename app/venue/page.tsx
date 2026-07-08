@@ -5,6 +5,7 @@ import { MapPin, Calendar, Clock, Compass, Car, ExternalLink } from "lucide-reac
 import { Button } from "@/components/ui/button";
 import Navbar from "../_components/Navbar";
 import { AddToCalendar } from "../_components/AddToCalendar";
+import { useAppSettings } from "@/hooks/useAppSettings";
 
 export default function VenuePage() {
   // Direct link + embed for Diamond Lounge, West Ealing, London
@@ -13,10 +14,24 @@ export default function VenuePage() {
   const googleMapsExternalUrl =
     "https://maps.google.com/?q=Diamond+Lounge,+142+The+Broadway,+West+Ealing,+London,+W13+0TL";
 
+  const { settings } = useAppSettings();
+  const start = new Date(settings.wedding_date);
+  const end = new Date(start.getTime() + 6 * 60 * 60 * 1000);
+  const tz = "Europe/London";
+  const dateLine = start.toLocaleDateString("en-GB", {
+    timeZone: tz,
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+  const fmtTime = (d: Date) =>
+    d.toLocaleTimeString("en-GB", { timeZone: tz, hour: "numeric", minute: "2-digit", hour12: true });
+
   const details = [
     { icon: MapPin, label: "Address", lines: ["Diamond Lounge", "142 The Broadway, West Ealing", "London, W13 0TL, UK"] },
-    { icon: Calendar, label: "Date", lines: ["Friday, September 11, 2026"] },
-    { icon: Clock, label: "Time", lines: ["6:00 PM – 11:59 PM BST"] },
+    { icon: Calendar, label: "Date", lines: [dateLine] },
+    { icon: Clock, label: "Time", lines: [`${fmtTime(start)} – ${fmtTime(end)}`] },
   ];
 
   return (

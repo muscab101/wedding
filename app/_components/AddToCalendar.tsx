@@ -3,30 +3,35 @@
 import { useEffect, useRef, useState } from "react";
 import { CalendarPlus, Bell } from "lucide-react";
 import { GoogleIcon } from "./GoogleIcon";
+import { useAppSettings } from "@/hooks/useAppSettings";
 
-// The ceremony: 11 Sept 2026, 6:00 PM London time (BST = UTC+1) → 17:00 UTC,
-// ending 11:59 PM BST → 22:59 UTC. Using UTC ("Z") keeps it unambiguous.
-const EVENT = {
+const EVENT_META = {
   title: "Abdirahim & Creezel's Wedding",
   details:
     "We can't wait to celebrate with you! Please bring your digital entry pass to the gate.",
   location: "Diamond Lounge, 142 The Broadway, West Ealing, London W13 0TL",
-  startUtc: "20260911T170000Z",
-  endUtc: "20260911T225900Z",
 };
 
-function googleCalendarUrl() {
+// Reception runs ~6 hours from the ceremony start.
+const EVENT_LENGTH_MS = 6 * 60 * 60 * 1000;
+
+// "2026-09-11T17:00:00.000Z" -> "20260911T170000Z"
+function toUtcCompact(d: Date) {
+  return d.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
+}
+
+function googleCalendarUrl(startUtc: string, endUtc: string) {
   const params = new URLSearchParams({
     action: "TEMPLATE",
-    text: EVENT.title,
-    dates: `${EVENT.startUtc}/${EVENT.endUtc}`,
-    details: EVENT.details,
-    location: EVENT.location,
+    text: EVENT_META.title,
+    dates: `${startUtc}/${endUtc}`,
+    details: EVENT_META.details,
+    location: EVENT_META.location,
   });
   return `https://calendar.google.com/calendar/render?${params.toString()}`;
 }
 
-function downloadIcs() {
+function downloadIcs(startUtc: string, endUtc: string) {
   const ics = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
@@ -34,13 +39,12 @@ function downloadIcs() {
     "CALSCALE:GREGORIAN",
     "BEGIN:VEVENT",
     "UID:abdirahim-creezel-wedding@wedding",
-    `DTSTAMP:${EVENT.startUtc}`,
-    `DTSTART:${EVENT.startUtc}`,
-    `DTEND:${EVENT.endUtc}`,
-    `SUMMARY:${EVENT.title}`,
-    `DESCRIPTION:${EVENT.details}`,
-    `LOCATION:${EVENT.location}`,
-    // Remind the guest 1 day before, and again 2 hours before.
+    `DTSTAMP:${startUtc}`,
+    `DTSTART:${startUtc}`,
+    `DTEND:${endUtc}`,
+    `SUMMARY:${EVENT_META.title}`,
+    `DESCRIPTION:${EVENT_META.details}`,
+    `LOCATION:${EVENT_META.location}`,
     "BEGIN:VALARM",
     "TRIGGER:-P1D",
     "ACTION:DISPLAY",
@@ -67,6 +71,11 @@ function downloadIcs() {
 export function AddToCalendar({ className = "" }: { className?: string }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const { settings } = useAppSettings();
+
+  const start = new Date(settings.wedding_date);
+  const startUtc = toUtcCompact(start);
+  const endUtc = toUtcCompact(new Date(start.getTime() + EVENT_LENGTH_MS));
 
   useEffect(() => {
     if (!open) return;
@@ -95,7 +104,7 @@ export function AddToCalendar({ className = "" }: { className?: string }) {
             Get a reminder for the big day
           </div>
           <a
-            href={googleCalendarUrl()}
+            href={googleCalendarUrl(startUtc, endUtc)}
             target="_blank"
             rel="noopener noreferrer"
             onClick={() => setOpen(false)}
@@ -107,7 +116,7 @@ export function AddToCalendar({ className = "" }: { className?: string }) {
           <button
             type="button"
             onClick={() => {
-              downloadIcs();
+              downloadIcs(startUtc, endUtc);
               setOpen(false);
             }}
             className="flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2.5 text-sm text-foreground transition hover:bg-accent"

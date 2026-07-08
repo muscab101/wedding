@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { QRCodeSVG } from "qrcode.react";
 import { supabase } from "@/lib/supabase";
 import { generatePassId, rsvpInputSchema } from "@/lib/schemas";
+import { useAppSettings } from "@/hooks/useAppSettings";
 import type { RsvpPass } from "@/lib/types";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import {
@@ -33,11 +34,7 @@ import { AddToCalendar } from "../_components/AddToCalendar";
 import { AddToGoogleWallet } from "../_components/AddToGoogleWallet";
 
 // RSVP closes this many days before the ceremony.
-const WEDDING_DATE = new Date("September 11, 2026 18:00:00");
 const RSVP_CLOSE_DAYS = 7;
-const RSVP_DEADLINE = new Date(
-  WEDDING_DATE.getTime() - RSVP_CLOSE_DAYS * 24 * 60 * 60 * 1000
-);
 
 export default function RsvpAndPassPage() {
   const [name, setName] = useState("");
@@ -52,8 +49,17 @@ export default function RsvpAndPassPage() {
   const passRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
+  const { settings } = useAppSettings();
+  const weddingDate = new Date(settings.wedding_date);
+
   // Once we're within a week of the wedding, new RSVPs are closed.
-  const rsvpClosed = Date.now() >= RSVP_DEADLINE.getTime();
+  const rsvpClosed =
+    Date.now() >= weddingDate.getTime() - RSVP_CLOSE_DAYS * 24 * 60 * 60 * 1000;
+
+  // Formatted date shown on the pass, e.g. "11.09.2026".
+  const passDate = weddingDate
+    .toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" })
+    .replace(/\//g, ".");
 
   // Require a logged-in guest before any pass / QR code is shown.
   useEffect(() => {
@@ -365,7 +371,7 @@ export default function RsvpAndPassPage() {
                     </p>
                     <h4 className="font-serif text-2xl tracking-wide">The Wedding Celebration</h4>
                     <div className="flex items-center justify-center gap-4 pt-2 text-xs text-white/90">
-                      <span className="flex items-center gap-1"><Calendar className="h-3.5 w-3.5" /> 11.09.2026</span>
+                      <span className="flex items-center gap-1"><Calendar className="h-3.5 w-3.5" /> {passDate}</span>
                       <span className="flex items-center gap-1"><MapPin className="h-3.5 w-3.5" /> Diamond Lounge</span>
                     </div>
                   </div>

@@ -5,9 +5,22 @@ import Link from "next/link";
 import Image from "next/image";
 import { Calendar, MapPin, ChevronDown } from "lucide-react";
 import HeroImg from "../../public/hero.png";
+import { useAppSettings } from "@/hooks/useAppSettings";
 
 export default function HeroSection() {
   const [animate, setAnimate] = useState(false);
+  const { settings } = useAppSettings();
+  const start = new Date(settings.wedding_date);
+  const tz = "Europe/London";
+  const longDate = start.toLocaleDateString("en-US", {
+    timeZone: tz,
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
+  const shortDate = start
+    .toLocaleDateString("en-GB", { timeZone: tz, day: "2-digit", month: "2-digit", year: "numeric" })
+    .replace(/\//g, " · ");
 
   // Triggers the entrance animation right after the page mounts (post-hydration)
   useEffect(() => {
@@ -49,7 +62,7 @@ export default function HeroSection() {
               <Calendar className="h-5 w-5 shrink-0 text-brand" />
               <div className="text-left">
                 <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Date</p>
-                <p className="text-sm font-semibold text-foreground">September 11, 2026</p>
+                <p className="text-sm font-semibold text-foreground">{longDate}</p>
               </div>
             </div>
             <div className="flex items-center gap-3 rounded-2xl border border-border bg-card p-4">
@@ -102,7 +115,7 @@ export default function HeroSection() {
               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-accent text-sm">💍</div>
               <div className="text-left">
                 <p className="text-[10px] font-medium uppercase text-muted-foreground">Save the date</p>
-                <p className="text-xs font-bold text-foreground">11 · 09 · 2026</p>
+                <p className="text-xs font-bold text-foreground">{shortDate}</p>
               </div>
             </div>
           </div>
