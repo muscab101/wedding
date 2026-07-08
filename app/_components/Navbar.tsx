@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { AnnouncementBanner } from "./AnnouncementBanner";
 import { LanguageSwitcher } from "./LanguageSwitcher";
+import { ThemeToggle } from "./ThemeToggle";
 import { useI18n } from "@/lib/i18n";
 
 const navItems = [
@@ -104,8 +105,9 @@ export default function Navbar() {
         </div>
 
         {/* Right side */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 sm:gap-2">
           <LanguageSwitcher />
+          <ThemeToggle />
           {!loading &&
             (user ? (
               <DropdownMenu>
