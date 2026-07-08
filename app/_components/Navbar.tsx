@@ -17,12 +17,14 @@ import {
   DropdownMenuGroup,
 } from "@/components/ui/dropdown-menu";
 import { AnnouncementBanner } from "./AnnouncementBanner";
+import { LanguageSwitcher } from "./LanguageSwitcher";
+import { useI18n } from "@/lib/i18n";
 
 const navItems = [
-  { name: "Home", href: "/dashboard" },
-  { name: "RSVP & Pass", href: "/rsvp" },
-  { name: "Venue", href: "/venue" },
-  { name: "Wishes", href: "/wishes" },
+  { key: "nav.home", href: "/dashboard" },
+  { key: "nav.rsvp", href: "/rsvp" },
+  { key: "nav.venue", href: "/venue" },
+  { key: "nav.wishes", href: "/wishes" },
 ];
 
 export default function Navbar() {
@@ -31,6 +33,7 @@ export default function Navbar() {
   const [open, setOpen] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
+  const { t } = useI18n();
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -83,7 +86,7 @@ export default function Navbar() {
             const active = pathname === item.href;
             return (
               <Link
-                key={item.name}
+                key={item.href}
                 href={item.href}
                 className={`relative text-sm transition-colors ${
                   active
@@ -91,7 +94,7 @@ export default function Navbar() {
                     : "text-muted-foreground hover:text-brand"
                 }`}
               >
-                {item.name}
+                {t(item.key)}
                 {active && (
                   <span className="absolute -bottom-[22px] left-0 h-px w-full bg-brand" />
                 )}
@@ -102,6 +105,7 @@ export default function Navbar() {
 
         {/* Right side */}
         <div className="flex items-center gap-2">
+          <LanguageSwitcher />
           {!loading &&
             (user ? (
               <DropdownMenu>
@@ -136,7 +140,7 @@ export default function Navbar() {
                     className="flex cursor-pointer items-center gap-2 rounded-xl px-2.5 py-2 text-sm text-foreground focus:bg-accent focus:text-brand"
                   >
                     <LayoutDashboard className="h-4 w-4 text-muted-foreground" />
-                    Dashboard
+                    {t("nav.dashboard")}
                   </DropdownMenuItem>
                   <DropdownMenuSeparator className="my-1" />
                   <DropdownMenuItem
@@ -144,7 +148,7 @@ export default function Navbar() {
                     className="flex cursor-pointer items-center gap-2 rounded-xl px-2.5 py-2 text-sm text-red-600 focus:bg-red-50 focus:text-red-700"
                   >
                     <LogOut className="h-4 w-4 text-red-400" />
-                    Log Out
+                    {t("nav.logout")}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -154,13 +158,13 @@ export default function Navbar() {
                   onClick={() => router.push("/login")}
                   className="rounded-full px-4 py-2 text-sm text-muted-foreground transition hover:text-brand"
                 >
-                  Sign In
+                  {t("nav.signIn")}
                 </button>
                 <button
                   onClick={() => router.push("/register")}
                   className="rounded-full bg-brand px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-brand-hover"
                 >
-                  Register
+                  {t("nav.register")}
                 </button>
               </div>
             ))}
@@ -182,7 +186,7 @@ export default function Navbar() {
           <div className="flex flex-col">
             {navItems.map((item) => (
               <Link
-                key={item.name}
+                key={item.href}
                 href={item.href}
                 onClick={() => setOpen(false)}
                 className={`rounded-lg px-3 py-2.5 text-sm ${
@@ -191,7 +195,7 @@ export default function Navbar() {
                     : "text-muted-foreground hover:bg-muted"
                 }`}
               >
-                {item.name}
+                {t(item.key)}
               </Link>
             ))}
             {!user && (
@@ -200,13 +204,13 @@ export default function Navbar() {
                   onClick={() => router.push("/login")}
                   className="flex-1 rounded-full border border-border px-4 py-2 text-sm text-brand"
                 >
-                  Sign In
+                  {t("nav.signIn")}
                 </button>
                 <button
                   onClick={() => router.push("/register")}
                   className="flex-1 rounded-full bg-brand px-4 py-2 text-sm font-medium text-white"
                 >
-                  Register
+                  {t("nav.register")}
                 </button>
               </div>
             )}

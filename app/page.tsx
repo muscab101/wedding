@@ -2,6 +2,8 @@
 
 import { motion } from "framer-motion";
 import Link from "next/link";
+import { useI18n } from "@/lib/i18n";
+import { useAppSettings } from "@/hooks/useAppSettings";
 
 const fade = {
   hidden: { opacity: 0, y: 16 },
@@ -13,6 +15,16 @@ const fade = {
 };
 
 export default function Home() {
+  const { t } = useI18n();
+  const { settings } = useAppSettings();
+  const shortDate = new Date(settings.wedding_date)
+    .toLocaleDateString("en-GB", {
+      timeZone: "Europe/London",
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    })
+    .replace(/\//g, " · ");
   return (
     <main className="relative flex min-h-screen w-full flex-col items-center justify-center overflow-hidden bg-background px-5 py-16 text-center sm:px-6">
       {/* Soft rose ambience */}
@@ -26,7 +38,7 @@ export default function Home() {
         animate="show"
         className="eyebrow mb-6"
       >
-        Together with their families
+        {t("landing.eyebrow")}
       </motion.p>
 
       <motion.h1
@@ -49,11 +61,10 @@ export default function Home() {
         className="mt-8 flex flex-col items-center gap-4"
       >
         <div className="rule text-xs uppercase tracking-[0.35em] text-muted-foreground">
-          11 · 09 · 2026
+          {shortDate}
         </div>
         <p className="max-w-md text-sm leading-relaxed text-muted-foreground">
-          We joyfully invite you to celebrate our wedding at the Diamond Lounge,
-          London. Sign in to RSVP and receive your digital entry pass.
+          {t("landing.subtitle")}
         </p>
       </motion.div>
 
@@ -68,13 +79,13 @@ export default function Home() {
           href="/rsvp"
           className="w-full rounded-full bg-brand px-8 py-3 text-center text-sm font-medium text-white shadow-sm transition hover:bg-brand-hover hover:shadow-md sm:w-auto"
         >
-          RSVP &amp; Get Your Pass
+          {t("landing.rsvpCta")}
         </Link>
         <Link
           href="/login"
           className="w-full rounded-full border border-border px-8 py-3 text-center text-sm font-medium text-brand transition hover:bg-accent sm:w-auto"
         >
-          Sign In
+          {t("landing.signIn")}
         </Link>
       </motion.div>
     </main>

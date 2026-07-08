@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, Playfair_Display, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
+import { LanguageProvider } from "@/lib/i18n";
 
 // Body text — clean, highly legible sans.
 const inter = Inter({
@@ -47,7 +48,7 @@ export default function RootLayout({
       )}
     >
       <body className="min-h-full flex flex-col bg-background text-foreground">
-        {children}
+        <LanguageProvider>{children}</LanguageProvider>
       </body>
     </html>
   );
