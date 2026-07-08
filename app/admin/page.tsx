@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { supabase } from "@/lib/supabase";
 import { Users, CheckCircle2, MessageSquare, Video, Loader2 } from "lucide-react";
-import { AdminSidebar } from "./_components/admin-sidebar";
 
 export default function AdminDashboard() {
   const { loading } = useAdminAuth();
@@ -48,9 +47,7 @@ export default function AdminDashboard() {
   ];
 
   return (
-    <div className="flex min-h-screen bg-muted/30">
-      <AdminSidebar />
-      <main className="flex-1 space-y-8 p-6 md:p-10">
+    <main className="flex-1 space-y-8 p-6 md:p-10">
         <header>
           <h1 className="font-serif text-3xl tracking-tight text-brand">System Dashboard</h1>
           <p className="mt-1 text-sm text-muted-foreground">Real-time overview of your wedding.</p>
@@ -70,7 +67,6 @@ export default function AdminDashboard() {
             );
           })}
         </div>
-      </main>
-    </div>
+    </main>
   );
 }

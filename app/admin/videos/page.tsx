@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { supabase } from "@/lib/supabase";
 import { Trash2, Loader2, Film, Calendar, Video } from "lucide-react";
-import { AdminSidebar } from "../_components/admin-sidebar";
 import type { VideoItem } from "@/lib/types";
 
 export default function VideosAdminPage() {
@@ -41,9 +40,7 @@ export default function VideosAdminPage() {
     );
 
   return (
-    <div className="flex min-h-screen bg-muted/30">
-      <AdminSidebar />
-      <main className="flex-1 space-y-6 p-6 md:p-10">
+    <main className="flex-1 space-y-6 p-6 md:p-10">
         <header className="flex items-end justify-between">
           <div>
             <h1 className="font-serif text-3xl tracking-tight text-brand">Video Greetings</h1>
@@ -95,7 +92,6 @@ export default function VideosAdminPage() {
             ))}
           </div>
         )}
-      </main>
-    </div>
+    </main>
   );
 }

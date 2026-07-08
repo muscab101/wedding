@@ -2,7 +2,6 @@
 
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { Loader2, ShieldCheck, Database, Radio } from "lucide-react";
-import { AdminSidebar } from "../_components/admin-sidebar";
 
 export default function SettingsAdminPage() {
   const { user, loading } = useAdminAuth();
@@ -15,9 +14,7 @@ export default function SettingsAdminPage() {
     );
 
   return (
-    <div className="flex min-h-screen bg-muted/30">
-      <AdminSidebar />
-      <main className="flex-1 space-y-6 p-6 md:p-10">
+    <main className="flex-1 space-y-6 p-6 md:p-10">
         <header>
           <h1 className="font-serif text-3xl tracking-tight text-brand">Settings</h1>
           <p className="mt-1 text-sm text-muted-foreground">Access control and data overview for the portal.</p>
@@ -53,7 +50,6 @@ export default function SettingsAdminPage() {
             </div>
           </div>
         </div>
-      </main>
-    </div>
+    </main>
   );
 }

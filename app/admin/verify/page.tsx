@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { supabase } from "@/lib/supabase";
 import { Loader2, BadgeCheck, ShieldCheck, Search, Users } from "lucide-react";
-import { AdminSidebar } from "../_components/admin-sidebar";
 import type { Rsvp } from "@/lib/types";
 
 export default function VerifyAdminPage() {
@@ -58,9 +57,7 @@ export default function VerifyAdminPage() {
   const verifiedCount = guests.filter((g) => g.scanned).length;
 
   return (
-    <div className="flex min-h-screen bg-muted/30">
-      <AdminSidebar />
-      <main className="flex-1 space-y-6 p-6 md:p-10">
+    <main className="flex-1 space-y-6 p-6 md:p-10">
         <header className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <h1 className="font-serif text-3xl tracking-tight text-brand">Verify Guests</h1>
@@ -139,7 +136,6 @@ export default function VerifyAdminPage() {
             </div>
           )}
         </div>
-      </main>
-    </div>
+    </main>
   );
 }

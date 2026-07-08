@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { supabase } from "@/lib/supabase";
 import { Trash2, Loader2, CheckCircle, Clock, Calendar } from "lucide-react";
-import { AdminSidebar } from "../_components/admin-sidebar";
 import type { Rsvp } from "@/lib/types";
 
 export default function GuestsAdminPage() {
@@ -41,9 +40,7 @@ export default function GuestsAdminPage() {
     );
 
   return (
-    <div className="flex min-h-screen bg-muted/30">
-      <AdminSidebar />
-      <main className="flex-1 space-y-6 p-6 md:p-10">
+    <main className="flex-1 space-y-6 p-6 md:p-10">
         <header>
           <h1 className="font-serif text-3xl tracking-tight text-brand">Guest Records</h1>
           <p className="mt-1 text-sm text-muted-foreground">
@@ -113,7 +110,6 @@ export default function GuestsAdminPage() {
             </table>
           </div>
         </div>
-      </main>
-    </div>
+    </main>
   );
 }
