@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { supabase } from "@/lib/supabase";
-import { Trash2, Loader2, CheckCircle, Clock, Calendar } from "lucide-react";
+import { Trash2, Loader2, CheckCircle, Clock, Calendar, Download } from "lucide-react";
 import type { Rsvp } from "@/lib/types";
 
 export default function GuestsAdminPage() {
@@ -32,6 +32,30 @@ export default function GuestsAdminPage() {
     }
   };
 
+  // Download the current guest list as a CSV (Excel-friendly, UTF-8 with BOM).
+  const exportCsv = () => {
+    const headers = ["Name", "Pass ID", "Party Size", "Verified", "RSVP Status", "Created At"];
+    const esc = (v: string) => `"${v.replace(/"/g, '""')}"`;
+    const rows = guests.map((g) =>
+      [
+        g.name,
+        g.pass_id,
+        String(g.total_guests || 1),
+        g.scanned ? "Yes" : "No",
+        g.status,
+        g.created_at ? new Date(g.created_at).toISOString() : "",
+      ].map(esc).join(",")
+    );
+    const csv = [headers.map(esc).join(","), ...rows].join("\r\n");
+    const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `wedding-guests-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   if (loading)
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -41,11 +65,20 @@ export default function GuestsAdminPage() {
 
   return (
     <main className="flex-1 space-y-6 p-6 md:p-10">
-        <header>
-          <h1 className="font-serif text-3xl tracking-tight text-brand">Guest Records</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Manage guest information and monitor entry status. {guests.length} total.
-          </p>
+        <header className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h1 className="font-serif text-3xl tracking-tight text-brand">Guest Records</h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Manage guest information and monitor entry status. {guests.length} total.
+            </p>
+          </div>
+          <button
+            onClick={exportCsv}
+            disabled={guests.length === 0}
+            className="inline-flex h-10 items-center gap-2 rounded-xl border border-border bg-card px-4 text-sm font-medium text-brand transition hover:bg-accent disabled:opacity-50"
+          >
+            <Download className="h-4 w-4" /> Export CSV
+          </button>
         </header>
 
         <div className="overflow-hidden rounded-2xl border border-border bg-card">
