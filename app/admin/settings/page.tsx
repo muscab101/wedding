@@ -69,11 +69,33 @@ export default function SettingsAdminPage() {
     if (err) {
       console.error(err);
       setError("Could not save — check your admin permissions and try again.");
-    } else {
-      setSaved(true);
-      setTimeout(() => setSaved(false), 3000);
+      setSaving(false);
+      return;
     }
+
+    setSaved(true);
+    setTimeout(() => setSaved(false), 3000);
     setSaving(false);
+
+    // Offer to notify everyone who has RSVP'd about the new date.
+    if (window.confirm("Date saved. Email all attending guests about the change?")) {
+      try {
+        const { data: sess } = await supabase.auth.getSession();
+        const res = await fetch("/api/email/date-change", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${sess.session?.access_token ?? ""}`,
+          },
+          body: JSON.stringify({ weddingDate: iso }),
+        });
+        const j = await res.json();
+        if (res.ok) alert(`✅ Notified ${j.sent} guest(s) of the new date.`);
+        else alert(`Could not send emails: ${j.error ?? res.status}`);
+      } catch {
+        alert("Could not send emails — please try again.");
+      }
+    }
   };
 
   if (loading)

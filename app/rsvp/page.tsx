@@ -158,6 +158,7 @@ export default function RsvpAndPassPage() {
         total_guests: rsvpData.totalGuests,
         status: rsvpData.status,
         pass_id: passId,
+        email: authUser.email ?? null,
         scanned: false,
         scanned_at: null,
       });
