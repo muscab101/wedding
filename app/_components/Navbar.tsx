@@ -16,6 +16,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuGroup,
 } from "@/components/ui/dropdown-menu";
+import { AnnouncementBanner } from "./AnnouncementBanner";
 
 const navItems = [
   { name: "Home", href: "/dashboard" },
@@ -65,7 +66,9 @@ export default function Navbar() {
   const displayName = meta.full_name || meta.name || user?.email || "Guest";
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border/70 bg-background/80 backdrop-blur-md">
+    <>
+      <AnnouncementBanner />
+      <header className="sticky top-0 z-50 w-full border-b border-border/70 bg-background/80 backdrop-blur-md">
       <nav className="mx-auto flex h-16 max-w-6xl items-center justify-between px-5 sm:px-8">
         {/* Monogram */}
         <Link href="/" className="shrink-0">
@@ -210,6 +213,7 @@ export default function Navbar() {
           </div>
         </div>
       )}
-    </header>
+      </header>
+    </>
   );
 }

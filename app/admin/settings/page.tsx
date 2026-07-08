@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { useAppSettings } from "@/hooks/useAppSettings";
 import { supabase } from "@/lib/supabase";
-import { Loader2, ShieldCheck, Database, Radio, CalendarClock, Check } from "lucide-react";
+import { Loader2, ShieldCheck, Database, Radio, CalendarClock, Check, Megaphone } from "lucide-react";
 
 // ISO -> "YYYY-MM-DDTHH:mm" in the browser's local time (for the datetime-local input)
 function toLocalInput(iso: string) {
@@ -23,10 +23,38 @@ export default function SettingsAdminPage() {
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
 
-  // Seed the input from the current wedding date once it loads.
+  const [ann, setAnn] = useState("");
+  const [annActive, setAnnActive] = useState(false);
+  const [savingAnn, setSavingAnn] = useState(false);
+  const [savedAnn, setSavedAnn] = useState(false);
+
+  // Seed inputs from current settings once they load.
   useEffect(() => {
     setDateInput(toLocalInput(settings.wedding_date));
   }, [settings.wedding_date]);
+  useEffect(() => {
+    setAnn(settings.announcement ?? "");
+    setAnnActive(settings.announcement_active);
+  }, [settings.announcement, settings.announcement_active]);
+
+  const saveAnnouncement = async (active: boolean) => {
+    setSavingAnn(true);
+    setSavedAnn(false);
+    const { error: err } = await supabase
+      .from("app_settings")
+      .update({
+        announcement: ann.trim() || null,
+        announcement_active: active,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", 1);
+    if (!err) {
+      setAnnActive(active);
+      setSavedAnn(true);
+      setTimeout(() => setSavedAnn(false), 3000);
+    }
+    setSavingAnn(false);
+  };
 
   const saveDate = async () => {
     if (!dateInput) return;
@@ -96,6 +124,48 @@ export default function SettingsAdminPage() {
             </button>
           </div>
           {error && <p className="mt-2 text-xs text-red-600">{error}</p>}
+        </div>
+
+        {/* Announcement banner */}
+        <div className="rounded-2xl border border-border bg-card p-6">
+          <div className="flex items-center gap-2 text-brand">
+            <Megaphone className="h-5 w-5" />
+            <h2 className="font-serif text-lg font-semibold">Announcement Banner</h2>
+          </div>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Post a message that appears at the top of every guest page — handy for day-of updates.
+          </p>
+          <textarea
+            value={ann}
+            onChange={(e) => setAnn(e.target.value)}
+            rows={2}
+            placeholder="e.g. The ceremony will start 15 minutes late."
+            className="mt-4 w-full resize-none rounded-xl border border-input bg-card p-3 text-sm text-foreground outline-none focus:border-brand/40"
+          />
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <button
+              onClick={() => saveAnnouncement(true)}
+              disabled={savingAnn || !ann.trim()}
+              className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-brand px-4 text-sm font-medium text-white transition hover:bg-brand-hover disabled:opacity-50"
+            >
+              {savingAnn ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : savedAnn && annActive ? (
+                <Check className="h-4 w-4" />
+              ) : null}
+              Publish
+            </button>
+            <button
+              onClick={() => saveAnnouncement(false)}
+              disabled={savingAnn}
+              className="inline-flex h-10 items-center justify-center rounded-xl border border-border px-4 text-sm font-medium text-foreground transition hover:bg-muted disabled:opacity-50"
+            >
+              Hide banner
+            </button>
+            <span className="text-xs text-muted-foreground">
+              {annActive ? "● Currently showing to guests" : "○ Currently hidden"}
+            </span>
+          </div>
         </div>
 
         {/* Security */}
