@@ -6,30 +6,13 @@ import { Clock, Calendar, Heart, MessageSquare, Sparkles } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import type { Wish } from "@/lib/types";
 import { useAppSettings } from "@/hooks/useAppSettings";
+import { useI18n } from "@/lib/i18n";
 import Reveal from "./Reveal";
 
 const timeline = [
-  {
-    time: "4:00 PM",
-    title: "Doors Open",
-    description:
-      "Welcome guests! Early photo sessions, reception meetups, and guest seating begins.",
-    icon: Clock,
-  },
-  {
-    time: "5:00 PM",
-    title: "The Ceremony & Vows",
-    description:
-      "The official ceremony — the exchange of vows and the Nikah munaasabad.",
-    icon: Heart,
-  },
-  {
-    time: "7:00 PM",
-    title: "Dinner & Celebration",
-    description:
-      "A premium celebratory dinner accompanied by wonderful family moments.",
-    icon: Calendar,
-  },
+  { time: "4:00 PM", titleKey: "event.t1Title", descKey: "event.t1Desc", icon: Clock },
+  { time: "5:00 PM", titleKey: "event.t2Title", descKey: "event.t2Desc", icon: Heart },
+  { time: "7:00 PM", titleKey: "event.t3Title", descKey: "event.t3Desc", icon: Calendar },
 ];
 
 export default function EventDetails() {
@@ -37,6 +20,7 @@ export default function EventDetails() {
   const [loading, setLoading] = useState(true);
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
   const { settings } = useAppSettings();
+  const { t } = useI18n();
 
   // Countdown to the ceremony (uses the admin-editable wedding date)
   useEffect(() => {
@@ -88,28 +72,28 @@ export default function EventDetails() {
       <Reveal>
         <section className="space-y-10 text-center">
           <div className="space-y-3">
-            <span className="eyebrow">The moment approaches</span>
+            <span className="eyebrow">{t("event.countdownEyebrow")}</span>
             <h2 className="text-3xl tracking-tight text-brand sm:text-4xl">
-              Counting Down the Days
+              {t("event.countdownTitle")}
             </h2>
           </div>
 
           <div className="mx-auto grid max-w-2xl grid-cols-2 gap-4 md:grid-cols-4">
             {[
-              { label: "Days", value: timeLeft.days },
-              { label: "Hours", value: timeLeft.hours },
-              { label: "Minutes", value: timeLeft.minutes },
-              { label: "Seconds", value: timeLeft.seconds },
+              { key: "event.days", value: timeLeft.days },
+              { key: "event.hours", value: timeLeft.hours },
+              { key: "event.minutes", value: timeLeft.minutes },
+              { key: "event.seconds", value: timeLeft.seconds },
             ].map((item) => (
               <div
-                key={item.label}
+                key={item.key}
                 className="rounded-2xl border border-border bg-card p-6 transition hover:border-brand/20"
               >
                 <div className="font-serif text-4xl text-brand tabular-nums">
                   {String(item.value).padStart(2, "0")}
                 </div>
                 <div className="mt-1 text-[11px] font-medium uppercase tracking-[0.2em] text-muted-foreground">
-                  {item.label}
+                  {t(item.key)}
                 </div>
               </div>
             ))}
@@ -121,9 +105,9 @@ export default function EventDetails() {
       <Reveal>
         <section className="space-y-12">
           <div className="space-y-3 text-center">
-            <span className="eyebrow">The day, hour by hour</span>
+            <span className="eyebrow">{t("event.scheduleEyebrow")}</span>
             <h2 className="text-3xl tracking-tight text-brand sm:text-4xl">
-              Wedding Schedule
+              {t("event.scheduleTitle")}
             </h2>
           </div>
 
@@ -132,7 +116,7 @@ export default function EventDetails() {
               {timeline.map((item) => {
                 const Icon = item.icon;
                 return (
-                  <div key={item.title} className="relative">
+                  <div key={item.titleKey} className="relative">
                     <span className="absolute -left-[41px] flex h-8 w-8 items-center justify-center rounded-full border border-border bg-card">
                       <Icon className="h-4 w-4 text-brand" />
                     </span>
@@ -140,10 +124,10 @@ export default function EventDetails() {
                       {item.time}
                     </span>
                     <h3 className="mt-1 text-lg font-semibold text-foreground">
-                      {item.title}
+                      {t(item.titleKey)}
                     </h3>
                     <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
-                      {item.description}
+                      {t(item.descKey)}
                     </p>
                   </div>
                 );
@@ -158,9 +142,9 @@ export default function EventDetails() {
         <section className="space-y-8 rounded-3xl border border-border bg-brand-soft/60 p-8 md:p-12">
           <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
             <div className="space-y-3 text-center md:text-left">
-              <span className="eyebrow">From loved ones</span>
+              <span className="eyebrow">{t("event.wishesEyebrow")}</span>
               <h2 className="text-3xl tracking-tight text-brand sm:text-4xl">
-                Warm Wishes
+                {t("event.wishesTitle")}
               </h2>
             </div>
             <Link
@@ -168,7 +152,7 @@ export default function EventDetails() {
               className="inline-flex h-11 items-center justify-center gap-2 rounded-full border border-border bg-card px-6 text-sm font-medium text-brand transition hover:bg-accent"
             >
               <MessageSquare className="h-4 w-4" />
-              Leave a Message
+              {t("event.leaveMessage")}
             </Link>
           </div>
 
@@ -203,9 +187,9 @@ export default function EventDetails() {
           ) : (
             <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-card/50 p-12 text-center">
               <Sparkles className="mb-3 h-8 w-8 text-brand/30" />
-              <h4 className="text-sm font-medium text-foreground">No wishes yet</h4>
+              <h4 className="text-sm font-medium text-foreground">{t("event.noWishes")}</h4>
               <p className="mt-1 max-w-xs text-xs text-muted-foreground">
-                Be the first to leave a heartfelt message for the couple!
+                {t("event.beFirst")}
               </p>
             </div>
           )}

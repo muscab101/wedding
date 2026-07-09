@@ -6,10 +6,12 @@ import Image from "next/image";
 import { Calendar, MapPin, ChevronDown } from "lucide-react";
 import HeroImg from "../../public/hero.png";
 import { useAppSettings } from "@/hooks/useAppSettings";
+import { useI18n } from "@/lib/i18n";
 
 export default function HeroSection() {
   const [animate, setAnimate] = useState(false);
   const { settings } = useAppSettings();
+  const { t } = useI18n();
   const start = new Date(settings.wedding_date);
   const tz = "Europe/London";
   const longDate = start.toLocaleDateString("en-US", {
@@ -39,7 +41,7 @@ export default function HeroSection() {
       <div className="grid w-full max-w-6xl grid-cols-1 items-center gap-12 lg:grid-cols-12">
         {/* Text */}
         <div className="flex flex-col items-center space-y-7 text-center lg:col-span-7 lg:items-start lg:text-left">
-          <span className={`eyebrow ${reveal("delay-0")}`}>The celebration of love</span>
+          <span className={`eyebrow ${reveal("delay-0")}`}>{t("hero.eyebrow")}</span>
 
           <h1
             className={`font-serif text-5xl leading-[1.05] tracking-tight text-brand sm:text-6xl lg:text-7xl ${reveal(
@@ -52,24 +54,22 @@ export default function HeroSection() {
           </h1>
 
           <p className={`max-w-xl text-base leading-relaxed text-muted-foreground ${reveal("delay-200")}`}>
-            We are thrilled to invite you to share in our joy as we exchange vows
-            and begin our beautiful journey together. Your presence is our
-            greatest gift.
+            {t("hero.description")}
           </p>
 
           <div className={`grid w-full max-w-md grid-cols-2 gap-4 ${reveal("delay-300")}`}>
             <div className="flex items-center gap-3 rounded-2xl border border-border bg-card p-4">
               <Calendar className="h-5 w-5 shrink-0 text-brand" />
               <div className="text-left">
-                <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Date</p>
+                <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">{t("hero.dateLabel")}</p>
                 <p className="text-sm font-semibold text-foreground">{longDate}</p>
               </div>
             </div>
             <div className="flex items-center gap-3 rounded-2xl border border-border bg-card p-4">
               <MapPin className="h-5 w-5 shrink-0 text-brand" />
               <div className="text-left">
-                <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Location</p>
-                <p className="truncate text-sm font-semibold text-foreground">London, UK</p>
+                <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">{t("hero.locationLabel")}</p>
+                <p className="truncate text-sm font-semibold text-foreground">{t("hero.location")}</p>
               </div>
             </div>
           </div>
@@ -79,13 +79,13 @@ export default function HeroSection() {
               href="/rsvp"
               className="rounded-full bg-brand px-8 py-3 text-center text-sm font-medium text-white shadow-sm transition hover:bg-brand-hover"
             >
-              RSVP &amp; Get Entry Pass
+              {t("hero.rsvpCta")}
             </Link>
             <Link
               href="/venue"
               className="rounded-full border border-border px-8 py-3 text-center text-sm font-medium text-brand transition hover:bg-accent"
             >
-              View Venue Details
+              {t("hero.venueCta")}
             </Link>
           </div>
         </div>
@@ -123,7 +123,7 @@ export default function HeroSection() {
       </div>
 
       <div className="absolute bottom-5 left-1/2 hidden -translate-x-1/2 animate-bounce flex-col items-center gap-1 text-muted-foreground md:flex">
-        <span className="text-[10px] font-medium uppercase tracking-widest">Scroll</span>
+        <span className="text-[10px] font-medium uppercase tracking-widest">{t("hero.scroll")}</span>
         <ChevronDown className="h-4 w-4" />
       </div>
     </section>

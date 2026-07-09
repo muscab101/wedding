@@ -8,6 +8,7 @@ import { Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { GoogleIcon } from "../_components/GoogleIcon";
+import { useI18n } from "@/lib/i18n";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -15,6 +16,7 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const { t } = useI18n();
 
   // Route the user based on their email
   const handleUserRedirect = (userEmail: string | null) => {
@@ -38,9 +40,9 @@ export default function LoginPage() {
     if (signInError) {
       const msg = signInError.message.toLowerCase();
       if (msg.includes("not confirmed")) {
-        setError("Please confirm your email first — check your inbox for the confirmation link.");
+        setError(t("login.errUnconfirmed"));
       } else {
-        setError("The email or password you entered is incorrect.");
+        setError(t("login.errInvalid"));
       }
       setLoading(false);
       return;
@@ -58,7 +60,7 @@ export default function LoginPage() {
       options: { redirectTo: `${window.location.origin}/auth/callback` },
     });
     if (oauthError) {
-      setError("Google login failed. Please try again.");
+      setError(t("login.errGoogle"));
       setLoading(false);
     }
   };
@@ -73,10 +75,10 @@ export default function LoginPage() {
             A <span className="text-brand/40">&amp;</span> C
           </Link>
           <h1 className="mt-6 font-serif text-3xl tracking-tight text-brand">
-            Welcome back
+            {t("login.title")}
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            Sign in to RSVP and view your entry pass.
+            {t("login.subtitle")}
           </p>
         </div>
 
@@ -90,7 +92,7 @@ export default function LoginPage() {
           <form onSubmit={handleEmailLogin} className="grid gap-4">
             <div className="grid gap-2">
               <Label htmlFor="email" className="text-sm font-medium text-foreground">
-                Email
+                {t("common.email")}
               </Label>
               <Input
                 id="email"
@@ -105,7 +107,7 @@ export default function LoginPage() {
             </div>
             <div className="grid gap-2">
               <Label htmlFor="password" className="text-sm font-medium text-foreground">
-                Password
+                {t("common.password")}
               </Label>
               <Input
                 id="password"
@@ -124,13 +126,13 @@ export default function LoginPage() {
               className="mt-1 flex h-11 items-center justify-center gap-2 rounded-xl bg-brand text-sm font-medium text-white transition hover:bg-brand-hover disabled:opacity-60"
             >
               {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-              Sign In
+              {t("common.signIn")}
             </button>
           </form>
 
           <div className="my-5 flex items-center gap-3 text-xs uppercase tracking-wider text-muted-foreground">
             <span className="h-px flex-1 bg-border" />
-            or
+            {t("common.or")}
             <span className="h-px flex-1 bg-border" />
           </div>
 
@@ -141,14 +143,14 @@ export default function LoginPage() {
             className="flex h-11 w-full items-center justify-center gap-2.5 rounded-xl border border-border text-sm font-medium text-foreground transition hover:bg-muted disabled:opacity-60"
           >
             <GoogleIcon className="h-5 w-5" />
-            Continue with Google
+            {t("common.google")}
           </button>
         </div>
 
         <p className="mt-6 text-center text-sm text-muted-foreground">
-          Don&apos;t have an account?{" "}
+          {t("login.noAccount")}{" "}
           <Link href="/register" className="font-medium text-brand hover:underline">
-            Register
+            {t("common.register")}
           </Link>
         </p>
       </div>

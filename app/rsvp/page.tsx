@@ -6,6 +6,7 @@ import { QRCodeSVG } from "qrcode.react";
 import { supabase } from "@/lib/supabase";
 import { generatePassId, rsvpInputSchema } from "@/lib/schemas";
 import { useAppSettings } from "@/hooks/useAppSettings";
+import { useI18n } from "@/lib/i18n";
 import type { RsvpPass } from "@/lib/types";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import {
@@ -50,6 +51,7 @@ export default function RsvpAndPassPage() {
   const router = useRouter();
 
   const { settings } = useAppSettings();
+  const { t } = useI18n();
   const weddingDate = new Date(settings.wedding_date);
 
   // Once we're within a week of the wedding, new RSVPs are closed.
@@ -201,17 +203,16 @@ export default function RsvpAndPassPage() {
               <Lock className="h-6 w-6 text-brand" />
             </div>
             <h1 className="font-serif text-2xl tracking-tight text-brand">
-              Sign in to get your Entry Pass
+              {t("rsvp.gateTitle")}
             </h1>
             <p className="mx-auto max-w-xs text-sm leading-relaxed text-muted-foreground">
-              Your QR entry pass is reserved for invited guests. Please sign in to
-              RSVP and receive your official Digital Entry Pass.
+              {t("rsvp.gateBody")}
             </p>
             <button
               onClick={() => router.push("/login")}
               className="h-11 w-full rounded-xl bg-brand text-sm font-medium text-white transition hover:bg-brand-hover"
             >
-              Sign In to Continue
+              {t("rsvp.gateCta")}
             </button>
           </div>
         </div>
@@ -225,27 +226,27 @@ export default function RsvpAndPassPage() {
       <Celebration show={celebrate} onDone={() => setCelebrate(false)} />
       <main className="mx-auto min-h-screen w-full max-w-4xl space-y-10 px-5 py-14 sm:px-8">
         <header className="space-y-3 text-center">
-          <span className="eyebrow">RSVP &amp; Entry Pass</span>
+          <span className="eyebrow">{t("rsvp.eyebrow")}</span>
           <h1 className="font-serif text-3xl tracking-tight text-brand sm:text-4xl">
             {generatedPass
-              ? "Your Digital Entry Pass"
+              ? t("rsvp.titlePass")
               : rsvpClosed
-                ? "RSVP Closed"
-                : "Confirm Your Attendance"}
+                ? t("rsvp.titleClosed")
+                : t("rsvp.titleForm")}
           </h1>
           <p className="mx-auto max-w-sm text-sm text-muted-foreground">
             {generatedPass
-              ? "This pass is saved on your device. Please show it at the gate."
+              ? t("rsvp.subPass")
               : rsvpClosed
-                ? "RSVPs are closed within a week of the wedding. Please contact the couple directly."
-                : "Fill out the form below to generate your official Digital Entry Pass."}
+                ? t("rsvp.subClosed")
+                : t("rsvp.subForm")}
           </p>
         </header>
 
         <div className="grid grid-cols-1 items-start gap-8 md:grid-cols-12">
           {/* Form / confirmation */}
           <div className="space-y-5 rounded-3xl border border-border bg-card p-6 md:col-span-5">
-            <h3 className="font-serif text-lg font-semibold text-brand">RSVP Status</h3>
+            <h3 className="font-serif text-lg font-semibold text-brand">{t("rsvp.status")}</h3>
 
             {!generatedPass ? (
               rsvpClosed ? (
@@ -253,18 +254,17 @@ export default function RsvpAndPassPage() {
                   <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-accent">
                     <CalendarX2 className="h-6 w-6 text-brand" />
                   </div>
-                  <h4 className="text-sm font-semibold text-foreground">RSVP is now closed</h4>
+                  <h4 className="text-sm font-semibold text-foreground">{t("rsvp.closedTitle")}</h4>
                   <p className="text-xs leading-relaxed text-muted-foreground">
-                    RSVPs closed one week before the wedding. If you still need to attend,
-                    please contact the couple directly.
+                    {t("rsvp.closedBody")}
                   </p>
                 </div>
               ) : (
               <form onSubmit={handleRsvpSubmit} className="space-y-4">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-muted-foreground">Full Name</label>
+                  <label className="text-xs font-medium text-muted-foreground">{t("rsvp.name")}</label>
                   <Input
-                    placeholder="e.g., Mohamed Ali"
+                    placeholder={t("rsvp.namePlaceholder")}
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     required
@@ -275,13 +275,13 @@ export default function RsvpAndPassPage() {
 
                 <div className="space-y-1.5">
                   <label className="text-xs font-medium text-muted-foreground">
-                    Total Guests (including yourself)
+                    {t("rsvp.guests")}
                   </label>
                   <div className="flex h-11 items-center justify-between rounded-xl border border-input px-2">
                     <span className="pl-1 text-xs font-medium text-foreground">
                       {guests === "1"
-                        ? "Just me (1 person)"
-                        : `Me & ${parseInt(guests) - 1} ${parseInt(guests) === 2 ? "guest" : "guests"} (${guests} people)`}
+                        ? t("rsvp.justMe")
+                        : `${guests} ${t("rsvp.people")}`}
                     </span>
                     <div className="flex items-center gap-1">
                       <button
@@ -306,15 +306,15 @@ export default function RsvpAndPassPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-muted-foreground">Will you attend?</label>
+                  <label className="text-xs font-medium text-muted-foreground">{t("rsvp.willAttend")}</label>
                   <Select value={status} onValueChange={(v) => v && setStatus(v)} disabled={loading}>
                     <SelectTrigger className="h-11 rounded-xl">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="rounded-xl">
-                      <SelectItem value="attending">Yes, I will be there</SelectItem>
-                      <SelectItem value="maybe">Maybe, I&apos;m not sure yet</SelectItem>
-                      <SelectItem value="declined">Sorry, I cannot make it</SelectItem>
+                      <SelectItem value="attending">{t("rsvp.attending")}</SelectItem>
+                      <SelectItem value="maybe">{t("rsvp.maybe")}</SelectItem>
+                      <SelectItem value="declined">{t("rsvp.declined")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -325,7 +325,7 @@ export default function RsvpAndPassPage() {
                   className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-brand text-sm font-medium text-white transition hover:bg-brand-hover disabled:opacity-60"
                 >
                   {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle className="h-4 w-4" />}
-                  Confirm RSVP
+                  {t("rsvp.confirm")}
                 </button>
               </form>
               )
@@ -337,12 +337,10 @@ export default function RsvpAndPassPage() {
                   <CheckCircle className="mx-auto h-8 w-8 text-brand" />
                 )}
                 <h4 className="text-sm font-semibold text-foreground">
-                  {passVerified ? "Checked In ✓" : "RSVP Confirmed!"}
+                  {passVerified ? t("rsvp.checkedInTitle") : t("rsvp.confirmedTitle")}
                 </h4>
                 <p className="text-xs leading-relaxed text-muted-foreground">
-                  {passVerified
-                    ? "Your pass has been verified at the gate, so it can no longer be changed or cancelled."
-                    : "Your spot is secured. To register a different name, clear this pass."}
+                  {passVerified ? t("rsvp.checkedInBody") : t("rsvp.confirmedBody")}
                 </p>
                 {!passVerified && (
                   <button
@@ -354,7 +352,7 @@ export default function RsvpAndPassPage() {
                     }}
                     className="mt-2 rounded-xl border border-red-100 px-3 py-1.5 text-xs text-red-600 transition hover:bg-red-50"
                   >
-                    Cancel &amp; Re-RSVP
+                    {t("rsvp.cancel")}
                   </button>
                 )}
               </div>
@@ -368,9 +366,9 @@ export default function RsvpAndPassPage() {
                 <div ref={passRef} className="overflow-hidden rounded-[32px] border border-border bg-card shadow-sm">
                   <div className="relative space-y-2 bg-brand p-6 text-center text-white">
                     <p className="text-[10px] font-medium uppercase tracking-[0.2em] text-white/80">
-                      Official Entry Pass
+                      {t("rsvp.officialPass")}
                     </p>
-                    <h4 className="font-serif text-2xl tracking-wide">The Wedding Celebration</h4>
+                    <h4 className="font-serif text-2xl tracking-wide">{t("rsvp.celebration")}</h4>
                     <div className="flex items-center justify-center gap-4 pt-2 text-xs text-white/90">
                       <span className="flex items-center gap-1"><Calendar className="h-3.5 w-3.5" /> {passDate}</span>
                       <span className="flex items-center gap-1"><MapPin className="h-3.5 w-3.5" /> Diamond Lounge</span>
@@ -379,19 +377,19 @@ export default function RsvpAndPassPage() {
 
                   <div className="space-y-6 bg-card p-6 text-center">
                     <div className="space-y-1">
-                      <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Guest Name</p>
+                      <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">{t("rsvp.guestName")}</p>
                       <h5 className="text-lg font-semibold text-foreground">{generatedPass.name}</h5>
                     </div>
 
                     <div className="my-2 grid grid-cols-2 gap-4 border-y border-border py-3.5">
                       <div>
-                        <p className="text-[10px] font-medium uppercase text-muted-foreground">Allowed Guests</p>
+                        <p className="text-[10px] font-medium uppercase text-muted-foreground">{t("rsvp.allowedGuests")}</p>
                         <p className="mt-0.5 text-sm font-bold text-brand">
-                          {generatedPass.totalGuests} {generatedPass.totalGuests > 1 ? "People" : "Person"}
+                          {generatedPass.totalGuests} {generatedPass.totalGuests > 1 ? t("rsvp.people") : t("rsvp.person")}
                         </p>
                       </div>
                       <div>
-                        <p className="text-[10px] font-medium uppercase text-muted-foreground">Pass ID</p>
+                        <p className="text-[10px] font-medium uppercase text-muted-foreground">{t("rsvp.passId")}</p>
                         <p className="mt-0.5 font-mono text-sm font-bold text-foreground">{generatedPass.passId}</p>
                       </div>
                     </div>
@@ -402,11 +400,11 @@ export default function RsvpAndPassPage() {
                       </div>
                       {passVerified ? (
                         <span className="inline-flex items-center gap-1 rounded-full bg-green-50 px-2.5 py-1 text-[10px] font-semibold text-green-700">
-                          <BadgeCheck className="h-3 w-3" /> Verified · Checked In
+                          <BadgeCheck className="h-3 w-3" /> {t("rsvp.verified")}
                         </span>
                       ) : (
                         <p className="max-w-[200px] text-[10px] text-muted-foreground">
-                          Please present this digital pass at the entrance gate.
+                          {t("rsvp.presentPass")}
                         </p>
                       )}
                     </div>
@@ -417,7 +415,7 @@ export default function RsvpAndPassPage() {
                       onClick={() => window.print()}
                       className="mx-auto flex h-9 w-full items-center justify-center gap-1.5 rounded-xl text-xs font-medium text-brand transition hover:bg-accent"
                     >
-                      <Download className="h-3.5 w-3.5" /> Save / Print Pass
+                      <Download className="h-3.5 w-3.5" /> {t("rsvp.savePrint")}
                     </button>
                   </div>
                 </div>
@@ -435,9 +433,9 @@ export default function RsvpAndPassPage() {
                 <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-accent">
                   <Lock className="h-6 w-6 text-brand/50" />
                 </div>
-                <h4 className="text-sm font-medium text-foreground">Your pass will appear here</h4>
+                <h4 className="text-sm font-medium text-foreground">{t("rsvp.passPlaceholder")}</h4>
                 <p className="mt-1 max-w-[200px] text-xs">
-                  once you fill out and submit the RSVP form.
+                  {t("rsvp.passPlaceholderSub")}
                 </p>
               </div>
             )}

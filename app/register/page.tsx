@@ -8,6 +8,7 @@ import { Loader2, CheckCircle2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { GoogleIcon } from "../_components/GoogleIcon";
+import { useI18n } from "@/lib/i18n";
 
 export default function RegisterPage() {
   const [email, setEmail] = useState("");
@@ -17,6 +18,7 @@ export default function RegisterPage() {
   const [notice, setNotice] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const { t } = useI18n();
 
   // New registration (Email, Password & Confirm)
   const handleSignUp = async (e: React.FormEvent) => {
@@ -25,11 +27,11 @@ export default function RegisterPage() {
     setNotice("");
 
     if (password !== confirmPassword) {
-      setError("The password and its confirmation do not match.");
+      setError(t("register.errMismatch"));
       return;
     }
     if (password.length < 6) {
-      setError("Password must be at least 6 characters long.");
+      setError(t("register.errShort"));
       return;
     }
 
@@ -41,16 +43,16 @@ export default function RegisterPage() {
 
     if (signUpError) {
       const msg = signUpError.message.toLowerCase();
-      if (msg.includes("already")) setError("This email is already in use.");
-      else if (msg.includes("valid")) setError("The email address you entered is not valid.");
-      else setError("Something went wrong during registration.");
+      if (msg.includes("already")) setError(t("register.errInUse"));
+      else if (msg.includes("valid")) setError(t("register.errInvalidEmail"));
+      else setError(t("register.errGeneric"));
       setLoading(false);
       return;
     }
 
     // If email confirmation is on, no session is returned yet.
     if (!data.session) {
-      setNotice("Almost there! Check your email for a confirmation link, then sign in.");
+      setNotice(t("register.notice"));
       setLoading(false);
       return;
     }
@@ -67,7 +69,7 @@ export default function RegisterPage() {
       options: { redirectTo: `${window.location.origin}/auth/callback` },
     });
     if (oauthError) {
-      setError("Google login failed. Please try again.");
+      setError(t("login.errGoogle"));
       setLoading(false);
     }
   };
@@ -82,10 +84,10 @@ export default function RegisterPage() {
             A <span className="text-brand/40">&amp;</span> C
           </Link>
           <h1 className="mt-6 font-serif text-3xl tracking-tight text-brand">
-            Join the celebration
+            {t("register.title")}
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            Register to RSVP and generate your entry pass.
+            {t("register.subtitle")}
           </p>
         </div>
 
@@ -105,7 +107,7 @@ export default function RegisterPage() {
           <form onSubmit={handleSignUp} className="grid gap-4">
             <div className="grid gap-2">
               <Label htmlFor="email" className="text-sm font-medium text-foreground">
-                Email
+                {t("common.email")}
               </Label>
               <Input
                 id="email"
@@ -120,12 +122,12 @@ export default function RegisterPage() {
             </div>
             <div className="grid gap-2">
               <Label htmlFor="password" className="text-sm font-medium text-foreground">
-                Password
+                {t("common.password")}
               </Label>
               <Input
                 id="password"
                 type="password"
-                placeholder="At least 6 characters"
+                placeholder={t("register.pwPlaceholder")}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
@@ -135,12 +137,12 @@ export default function RegisterPage() {
             </div>
             <div className="grid gap-2">
               <Label htmlFor="confirm" className="text-sm font-medium text-foreground">
-                Confirm Password
+                {t("common.confirmPassword")}
               </Label>
               <Input
                 id="confirm"
                 type="password"
-                placeholder="Re-enter your password"
+                placeholder={t("register.pwConfirmPlaceholder")}
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
@@ -154,13 +156,13 @@ export default function RegisterPage() {
               className="mt-1 flex h-11 items-center justify-center gap-2 rounded-xl bg-brand text-sm font-medium text-white transition hover:bg-brand-hover disabled:opacity-60"
             >
               {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-              Create Account
+              {t("register.create")}
             </button>
           </form>
 
           <div className="my-5 flex items-center gap-3 text-xs uppercase tracking-wider text-muted-foreground">
             <span className="h-px flex-1 bg-border" />
-            or
+            {t("common.or")}
             <span className="h-px flex-1 bg-border" />
           </div>
 
@@ -171,14 +173,14 @@ export default function RegisterPage() {
             className="flex h-11 w-full items-center justify-center gap-2.5 rounded-xl border border-border text-sm font-medium text-foreground transition hover:bg-muted disabled:opacity-60"
           >
             <GoogleIcon className="h-5 w-5" />
-            Continue with Google
+            {t("common.google")}
           </button>
         </div>
 
         <p className="mt-6 text-center text-sm text-muted-foreground">
-          Already have an invite?{" "}
+          {t("register.haveInvite")}{" "}
           <Link href="/login" className="font-medium text-brand hover:underline">
-            Sign In
+            {t("common.signIn")}
           </Link>
         </p>
       </div>

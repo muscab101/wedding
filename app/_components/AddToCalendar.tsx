@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { CalendarPlus, Bell } from "lucide-react";
 import { GoogleIcon } from "./GoogleIcon";
 import { useAppSettings } from "@/hooks/useAppSettings";
+import { useI18n } from "@/lib/i18n";
 
 const EVENT_META = {
   title: "Abdirahim & Creezel's Wedding",
@@ -72,6 +73,7 @@ export function AddToCalendar({ className = "" }: { className?: string }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const { settings } = useAppSettings();
+  const { t } = useI18n();
 
   const start = new Date(settings.wedding_date);
   const startUtc = toUtcCompact(start);
@@ -94,7 +96,7 @@ export function AddToCalendar({ className = "" }: { className?: string }) {
         className="flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-border text-sm font-medium text-brand transition hover:bg-accent"
       >
         <CalendarPlus className="h-4 w-4" />
-        Add to Calendar
+        {t("venue.calendar")}
       </button>
 
       {open && (

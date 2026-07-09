@@ -25,6 +25,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Navbar from "../_components/Navbar";
+import { useI18n } from "@/lib/i18n";
 
 interface CustomToast {
   title: string;
@@ -33,6 +34,7 @@ interface CustomToast {
 }
 
 export default function WishesAndVideosPage() {
+  const { t } = useI18n();
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [toastNotification, setToastNotification] = useState<CustomToast | null>(null);
 
@@ -249,10 +251,10 @@ export default function WishesAndVideosPage() {
         )}
 
         <header className="space-y-3 text-center">
-          <span className="eyebrow">Guest wall</span>
-          <h1 className="font-serif text-4xl tracking-tight text-brand sm:text-5xl">Wishes &amp; Videos</h1>
+          <span className="eyebrow">{t("wishes.eyebrow")}</span>
+          <h1 className="font-serif text-4xl tracking-tight text-brand sm:text-5xl">{t("wishes.title")}</h1>
           <p className="mx-auto max-w-md text-sm text-muted-foreground">
-            Share your love, a blessing, or a short video clip with the happy couple.
+            {t("wishes.subtitle")}
           </p>
         </header>
 
@@ -260,10 +262,10 @@ export default function WishesAndVideosPage() {
           <div className="flex justify-center">
             <TabsList className="h-12 rounded-full border border-border bg-card p-1">
               <TabsTrigger value="wishes" className={tabTrigger}>
-                <MessageSquareHeart className="h-4 w-4" /> Warm Wishes
+                <MessageSquareHeart className="h-4 w-4" /> {t("wishes.tabWishes")}
               </TabsTrigger>
               <TabsTrigger value="videos" className={tabTrigger}>
-                <Video className="h-4 w-4" /> Video Clips
+                <Video className="h-4 w-4" /> {t("wishes.tabVideos")}
               </TabsTrigger>
             </TabsList>
           </div>
@@ -272,12 +274,12 @@ export default function WishesAndVideosPage() {
           <TabsContent value="wishes" className="grid grid-cols-1 gap-8 outline-none lg:grid-cols-12">
             <div className="h-fit space-y-6 rounded-3xl border border-border bg-card p-6 md:p-8 lg:col-span-5">
               <div className="space-y-1">
-                <h3 className="font-serif text-xl font-semibold text-brand">Write a Blessing</h3>
-                <p className="text-xs text-muted-foreground">Your message appears instantly on the live wall.</p>
+                <h3 className="font-serif text-xl font-semibold text-brand">{t("wishes.writeBlessing")}</h3>
+                <p className="text-xs text-muted-foreground">{t("wishes.writeSub")}</p>
               </div>
               <form onSubmit={handleWishSubmit} className="space-y-4">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-muted-foreground">Your Full Name</label>
+                  <label className="text-xs font-medium text-muted-foreground">{t("wishes.yourName")}</label>
                   <Input
                     placeholder="e.g., Ahmed Mohamed"
                     value={formData.name}
@@ -286,18 +288,18 @@ export default function WishesAndVideosPage() {
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-muted-foreground">Relation (optional)</label>
+                  <label className="text-xs font-medium text-muted-foreground">{t("wishes.relation")}</label>
                   <Input
-                    placeholder="e.g., Groom's Cousin, Friend"
+                    placeholder={t("wishes.relationPlaceholder")}
                     value={formData.relation}
                     onChange={(e) => setFormData({ ...formData, relation: e.target.value })}
                     className="h-11 rounded-xl"
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-muted-foreground">Message</label>
+                  <label className="text-xs font-medium text-muted-foreground">{t("wishes.message")}</label>
                   <Textarea
-                    placeholder="Write your congratulations here..."
+                    placeholder={t("wishes.messagePlaceholder")}
                     rows={4}
                     value={formData.text}
                     onChange={(e) => setFormData({ ...formData, text: e.target.value })}
@@ -310,16 +312,16 @@ export default function WishesAndVideosPage() {
                   className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-brand text-sm font-medium text-white transition hover:bg-brand-hover disabled:opacity-60"
                 >
                   {submittingWish ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                  Send Wish
+                  {t("wishes.send")}
                 </button>
               </form>
             </div>
 
             <div className="space-y-6 lg:col-span-7">
               <h3 className="flex items-center gap-2 text-lg font-semibold text-foreground">
-                Live Feed
+                {t("wishes.liveFeed")}
                 <span className="rounded-full bg-accent px-2 py-0.5 text-xs font-normal text-brand">
-                  {wishes.length} messages
+                  {wishes.length} {t("wishes.messages")}
                 </span>
               </h3>
 
@@ -418,8 +420,8 @@ export default function WishesAndVideosPage() {
               ) : (
                 <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-border bg-card/50 p-12 text-center">
                   <MessageSquareHeart className="mb-2 h-8 w-8 text-brand/30" />
-                  <h4 className="text-sm font-medium text-foreground">No wishes yet</h4>
-                  <p className="mt-0.5 max-w-xs text-xs text-muted-foreground">Be the first to leave a blessing.</p>
+                  <h4 className="text-sm font-medium text-foreground">{t("wishes.noWishes")}</h4>
+                  <p className="mt-0.5 max-w-xs text-xs text-muted-foreground">{t("wishes.beFirstWish")}</p>
                 </div>
               )}
             </div>
@@ -429,8 +431,8 @@ export default function WishesAndVideosPage() {
           <TabsContent value="videos" className="space-y-8 outline-none">
             <div className="mx-auto max-w-xl space-y-4 rounded-3xl border border-border bg-card p-6 text-center">
               <div className="space-y-1">
-                <h3 className="font-serif text-lg font-semibold text-brand">Upload a Video Greeting</h3>
-                <p className="text-xs text-muted-foreground">A short selfie video or clip (max 50MB, MP4/WebM).</p>
+                <h3 className="font-serif text-lg font-semibold text-brand">{t("wishes.uploadTitle")}</h3>
+                <p className="text-xs text-muted-foreground">{t("wishes.uploadSub")}</p>
               </div>
               <form onSubmit={handleVideoUpload} className="space-y-4">
                 <div className="group relative flex cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-border bg-muted/30 p-6 transition hover:bg-muted/60">
@@ -443,12 +445,12 @@ export default function WishesAndVideosPage() {
                   />
                   <UploadCloud className="h-8 w-8 text-muted-foreground transition group-hover:text-brand" />
                   <span className="text-xs font-medium text-foreground">
-                    {videoFile ? videoFile.name : "Click to browse or drop your video file"}
+                    {videoFile ? videoFile.name : t("wishes.uploadHint")}
                   </span>
                 </div>
                 {uploadingVideo && (
                   <div className="w-full space-y-1.5">
-                    <div className="text-xs font-semibold text-muted-foreground">Uploading your clip...</div>
+                    <div className="text-xs font-semibold text-muted-foreground">{t("wishes.uploading")}</div>
                     <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
                       <div className="h-full w-full animate-pulse bg-brand" />
                     </div>
@@ -460,15 +462,15 @@ export default function WishesAndVideosPage() {
                   className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-brand px-6 text-sm font-medium text-white transition hover:bg-brand-hover disabled:opacity-50"
                 >
                   {uploadingVideo ? <Loader2 className="h-4 w-4 animate-spin" /> : <Film className="h-4 w-4" />}
-                  Share Video Clip
+                  {t("wishes.shareVideo")}
                 </button>
               </form>
             </div>
 
             <div className="space-y-6">
               <h3 className="flex items-center justify-center gap-2 text-lg font-semibold text-foreground md:justify-start">
-                Video Stream
-                <span className="rounded-full bg-accent px-2 py-0.5 text-xs font-normal text-brand">{videos.length} clips</span>
+                {t("wishes.videoStream")}
+                <span className="rounded-full bg-accent px-2 py-0.5 text-xs font-normal text-brand">{videos.length} {t("wishes.clips")}</span>
               </h3>
               {videosLoading ? (
                 <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">
@@ -502,8 +504,8 @@ export default function WishesAndVideosPage() {
               ) : (
                 <div className="mx-auto flex max-w-md flex-col items-center justify-center rounded-3xl border border-dashed border-border bg-card/50 p-16 text-center">
                   <Film className="mb-2 h-8 w-8 text-brand/30" />
-                  <h4 className="text-sm font-medium text-foreground">No video clips shared yet</h4>
-                  <p className="mt-0.5 text-xs text-muted-foreground">Be the first to share a celebratory clip!</p>
+                  <h4 className="text-sm font-medium text-foreground">{t("wishes.noVideos")}</h4>
+                  <p className="mt-0.5 text-xs text-muted-foreground">{t("wishes.beFirstVideo")}</p>
                 </div>
               )}
             </div>
