@@ -6,6 +6,7 @@ import { supabase } from "@/lib/supabase";
 export interface AppSettings {
   wedding_date: string; // ISO timestamp
   announcement: string | null;
+  announcement_link: string | null;
   announcement_active: boolean;
 }
 
@@ -14,6 +15,7 @@ export interface AppSettings {
 const FALLBACK: AppSettings = {
   wedding_date: "2026-09-11T18:00:00+01:00",
   announcement: null,
+  announcement_link: null,
   announcement_active: false,
 };
 
@@ -31,7 +33,7 @@ export function useAppSettings() {
     const load = async () => {
       const { data } = await supabase
         .from("app_settings")
-        .select("wedding_date, announcement, announcement_active")
+        .select("wedding_date, announcement, announcement_link, announcement_active")
         .eq("id", 1)
         .maybeSingle();
       if (!active) return;

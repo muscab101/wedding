@@ -10,6 +10,7 @@ import {
   BadgeCheck,
   MessageSquare,
   Video,
+  Megaphone,
   Settings,
   LogOut,
   Sparkles,
@@ -23,6 +24,7 @@ const menuItems = [
   { name: "Verify Guests", href: "/admin/verify", icon: BadgeCheck },
   { name: "Messages", href: "/admin/messages", icon: MessageSquare },
   { name: "Videos", href: "/admin/videos", icon: Video },
+  { name: "Communications", href: "/admin/communications", icon: Megaphone },
   { name: "Settings", href: "/admin/settings", icon: Settings },
 ];
 

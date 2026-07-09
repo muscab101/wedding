@@ -23,7 +23,19 @@ export function AnnouncementBanner() {
   return (
     <div className="relative z-40 flex items-start gap-2.5 bg-brand px-4 py-2.5 text-center text-sm text-white">
       <Megaphone className="mt-0.5 h-4 w-4 shrink-0" />
-      <p className="flex-1 leading-snug">{message}</p>
+      <p className="flex-1 leading-snug">
+        {message}
+        {settings.announcement_link && (
+          <a
+            href={settings.announcement_link}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="ml-2 whitespace-nowrap font-semibold underline underline-offset-2"
+          >
+            Learn more →
+          </a>
+        )}
+      </p>
       <button
         onClick={() => {
           localStorage.setItem("dismissed_announcement", message ?? "");
