@@ -4,19 +4,12 @@ import { useEffect, useState } from "react";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { useAppSettings } from "@/hooks/useAppSettings";
 import { supabase } from "@/lib/supabase";
-import {
-  Loader2,
-  Megaphone,
-  MessageSquare,
-  Send,
-  Check,
-  Link2,
-  History,
-} from "lucide-react";
+import { Loader2, Megaphone, MessageSquare, Check, Link2, History } from "lucide-react";
+import { FaWhatsapp } from "react-icons/fa";
 
 interface Comm {
   id: string;
-  type: "announcement" | "sms";
+  type: "announcement" | "sms" | "whatsapp";
   message: string;
   link: string | null;
   status: string;
@@ -43,9 +36,8 @@ export default function CommunicationsPage() {
   const [savingAnn, setSavingAnn] = useState(false);
   const [savedAnn, setSavedAnn] = useState(false);
 
-  const [smsMsg, setSmsMsg] = useState("");
-  const [sendingSms, setSendingSms] = useState(false);
-  const [smsResult, setSmsResult] = useState("");
+  const [waMsg, setWaMsg] = useState("");
+  const [waSending, setWaSending] = useState(false);
 
   useEffect(() => {
     if (loading) return;
@@ -109,31 +101,15 @@ export default function CommunicationsPage() {
     setSavingAnn(false);
   };
 
-  const sendSms = async () => {
-    if (!smsMsg.trim()) return;
-    setSendingSms(true);
-    setSmsResult("");
-    let status = "failed";
-    let recipients: number | null = null;
-    try {
-      const { data: sess } = await supabase.auth.getSession();
-      const res = await fetch("/api/sms", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${sess.session?.access_token ?? ""}`,
-        },
-        body: JSON.stringify({ message: smsMsg.trim() }),
-      });
-      const j = await res.json();
-      status = j.status ?? (res.ok ? "sent" : "failed");
-      recipients = typeof j.sent === "number" ? j.sent : null;
-      setSmsResult(j.note ?? j.error ?? "Message processed.");
-    } catch {
-      setSmsResult("Could not reach the SMS service.");
-    }
-    await logComm({ type: "sms", message: smsMsg.trim(), status, recipients });
-    setSendingSms(false);
+  const sendWhatsApp = async () => {
+    const msg = waMsg.trim();
+    if (!msg) return;
+    setWaSending(true);
+    // Open WhatsApp with the message pre-filled; the admin then picks their
+    // guest group / broadcast list / contacts and sends it. No backend needed.
+    window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, "_blank", "noopener,noreferrer");
+    await logComm({ type: "whatsapp", message: msg, status: "sent" });
+    setWaSending(false);
   };
 
   if (loading)
@@ -206,39 +182,33 @@ export default function CommunicationsPage() {
           </div>
         </div>
 
-        {/* SMS */}
+        {/* WhatsApp */}
         <div className="space-y-4 rounded-2xl border border-border bg-card p-6">
-          <div className="flex items-center gap-2 text-brand">
-            <MessageSquare className="h-5 w-5" />
-            <h2 className="font-serif text-lg font-semibold">Send SMS</h2>
+          <div className="flex items-center gap-2">
+            <FaWhatsapp className="h-5 w-5 text-[#25D366]" />
+            <h2 className="font-serif text-lg font-semibold text-brand">WhatsApp Broadcast</h2>
           </div>
           <p className="text-sm text-muted-foreground">
-            Draft a text message to broadcast to guests.
+            Compose a message, then pick your guest group or contacts in WhatsApp to send it.
           </p>
           <textarea
-            value={smsMsg}
-            onChange={(e) => setSmsMsg(e.target.value)}
+            value={waMsg}
+            onChange={(e) => setWaMsg(e.target.value)}
             rows={4}
-            maxLength={320}
-            placeholder="e.g. Reminder: doors open at 4 PM today. See you soon!"
+            placeholder="e.g. Reminder: doors open at 4 PM today. See you soon! 🎉"
             className="w-full resize-none rounded-xl border border-input bg-card p-3 text-sm text-foreground outline-none focus:border-brand/40"
           />
           <div className="flex items-center justify-between">
-            <span className="text-xs text-muted-foreground">{smsMsg.length}/320</span>
+            <span className="text-xs text-muted-foreground">{waMsg.length} chars</span>
             <button
-              onClick={sendSms}
-              disabled={sendingSms || !smsMsg.trim()}
-              className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-brand px-4 text-sm font-medium text-white transition hover:bg-brand-hover disabled:opacity-50"
+              onClick={sendWhatsApp}
+              disabled={waSending || !waMsg.trim()}
+              className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-[#25D366] px-4 text-sm font-medium text-white transition hover:bg-[#1eb257] disabled:opacity-50"
             >
-              {sendingSms ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-              Send SMS
+              {waSending ? <Loader2 className="h-4 w-4 animate-spin" /> : <FaWhatsapp className="h-4 w-4" />}
+              Send on WhatsApp
             </button>
           </div>
-          {smsResult && (
-            <p className="rounded-xl border border-border bg-muted/40 p-3 text-xs text-muted-foreground">
-              {smsResult}
-            </p>
-          )}
         </div>
       </div>
 
@@ -264,7 +234,9 @@ export default function CommunicationsPage() {
                   <tr key={c.id} className="align-top transition-colors hover:bg-muted/30">
                     <td className="p-4 pl-6">
                       <span className="inline-flex items-center gap-1.5 text-xs font-medium capitalize text-foreground">
-                        {c.type === "sms" ? (
+                        {c.type === "whatsapp" ? (
+                          <FaWhatsapp className="h-3.5 w-3.5 text-[#25D366]" />
+                        ) : c.type === "sms" ? (
                           <MessageSquare className="h-3.5 w-3.5 text-brand" />
                         ) : (
                           <Megaphone className="h-3.5 w-3.5 text-brand" />
